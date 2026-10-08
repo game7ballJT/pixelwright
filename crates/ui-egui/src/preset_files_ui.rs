@@ -1,14 +1,15 @@
 //! Preset files opened like documents (File › Open, drag-and-drop, the Brushes panel's
 //! Import Brushes…, the Preset Manager's Load…): Photoshop brushes (`.abr`) go to the brush
 //! library through `brush.presets.importAbr`, gradients (`.grd`) to the Gradients panel through
-//! `gradient.presets.importGrd`, instead of opening as documents.
+//! `gradient.presets.importGrd`, and swatch files (`.aco`, `.ase`) to the Swatches panel through
+//! `swatch.presets.importAco` / `importAse`, instead of opening as documents.
 
 use serde_json::{Value, json};
 
 use crate::PixelwrightApp;
 
 /// Extensions handled here rather than by the document importer.
-pub const PRESET_EXTS: &[&str] = &["abr", "grd"];
+pub const PRESET_EXTS: &[&str] = &["abr", "grd", "aco", "ase"];
 
 fn ext(name: &str) -> String {
     std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default()
@@ -34,6 +35,8 @@ pub fn open(app: &mut PixelwrightApp, name: &str, bytes: &[u8]) -> Option<Result
     let (cmd, what) = match ext(name).as_str() {
         "abr" => ("brush.presets.importAbr", "brushes"),
         "grd" => ("gradient.presets.importGrd", "gradients"),
+        "aco" => ("swatch.presets.importAco", "swatches"),
+        "ase" => ("swatch.presets.importAse", "swatches"),
         _ => return None,
     };
     let stem = std::path::Path::new(name).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| tl!("Imported").into());
@@ -49,7 +52,7 @@ pub fn open(app: &mut PixelwrightApp, name: &str, bytes: &[u8]) -> Option<Result
             app.ui.status = format!("Importing {what} from {stem}…");
             return;
         }
-        let n = r.get("count").and_then(Value::as_u64).unwrap_or(0);
+        let n = r.get("count").or_else(|| r.get("swatches")).and_then(Value::as_u64).unwrap_or(0);
         let warnings: Vec<String> = r.get("warnings").and_then(|w| serde_json::from_value(w.clone()).ok()).unwrap_or_default();
         app.ui.status_error = false;
         app.ui.status = match warnings.first() {
@@ -72,6 +75,8 @@ mod tests {
     fn recognises_preset_files() {
         assert!(is_preset_file("/a/b/Set.ABR"));
         assert!(is_preset_file("sunsets.grd"));
+        assert!(is_preset_file("brand.ASE"));
+        assert!(is_preset_file("/x/palette.aco"));
         assert!(!is_preset_file("photo.psd"));
         assert!(!is_preset_file("abr"));
     }

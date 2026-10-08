@@ -2118,3 +2118,11 @@ cameraRaw	Color	カラー
 	Orton Glow…	オートン・グロー…
 	Pixel Art…	ピクセルアート…
 	Straighten Horizon	水平線を補正
+	Add the foreground color as a swatch	描画色をスウォッチに追加
+	Make a palette from the image	画像からパレットを作成
+	Import swatches…	スウォッチを読み込む…
+	Swatch Exchange (.ase)	Swatch Exchange (.ase)
+	Color Swatches (.aco)	Color Swatches (.aco)
+	Set as Background	背景色に設定
+	Delete Swatch	スウォッチを削除
+	Click sets foreground · right-click for more	クリックで描画色に設定 · 右クリックでその他

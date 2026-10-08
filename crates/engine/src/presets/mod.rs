@@ -9,6 +9,8 @@
 //! - patterns ([`patterns`]): groups over the existing pattern library (`pattern.*`);
 //! - styles ([`styles`]): layer effects (plus optional blending) applied to the selected layers;
 //! - shapes ([`shapes`]): vector shapes for the Custom Shape tool, placed as shape layers;
+//! - swatches ([`swatches`]): colour swatches in groups, with `.aco` / `.ase` import and export
+//!   and palettes taken from the open image;
 //! - tool presets ([`tools`]): a tool plus its options (opaque JSON the shell fills in);
 //! - clone sources ([`clone_source`]): five source slots with offset, scale, rotation and flip
 //!   that `paint.cloneStamp` / `paint.healingBrush` follow.
@@ -22,6 +24,7 @@ pub mod gradients;
 pub mod patterns;
 pub mod shapes;
 pub mod styles;
+pub mod swatches;
 pub mod tools;
 
 #[cfg(test)]
@@ -71,6 +74,8 @@ pub struct PresetState {
     pub gradient: gradients::GradientPreset,
     pub styles: Vec<Group<styles::StylePreset>>,
     pub shapes: Vec<Group<shapes::ShapePreset>>,
+    /// The Swatches panel: colour swatches in named groups ([`swatches`]).
+    pub swatches: Vec<Group<swatches::Swatch>>,
     /// Pattern groups: pattern names per folder (patterns themselves live in the library).
     pub pattern_groups: Vec<Group<String>>,
     /// The pattern the Patterns panel selected (Fill, Pattern fill layers default to it).
@@ -91,6 +96,7 @@ impl Default for PresetState {
             gradient: gradients::GradientPreset::foreground_to_background(),
             styles: styles::builtin(),
             shapes: shapes::builtin(),
+            swatches: swatches::builtin(),
             pattern_groups: patterns::builtin_groups(),
             pattern: None,
             tool_presets: tools::builtin(),
@@ -113,6 +119,8 @@ struct Persisted {
     #[serde(default)]
     shapes: Option<Vec<Group<shapes::ShapePreset>>>,
     #[serde(default)]
+    swatches: Option<Vec<Group<swatches::Swatch>>>,
+    #[serde(default)]
     pattern_groups: Option<Vec<Group<String>>>,
     #[serde(default)]
     tool_presets: Option<Vec<tools::ToolPreset>>,
@@ -130,6 +138,7 @@ impl PresetState {
             gradient: Some(self.gradient.clone()),
             styles: Some(self.styles.clone()),
             shapes: Some(self.shapes.clone()),
+            swatches: Some(self.swatches.clone()),
             pattern_groups: Some(self.pattern_groups.clone()),
             tool_presets: Some(self.tool_presets.clone()),
             custom_shapes: Some(s.edit_state.custom_shapes.clone()),
@@ -156,6 +165,9 @@ impl Session {
         }
         if let Some(g) = p.shapes {
             st.shapes = g;
+        }
+        if let Some(g) = p.swatches {
+            st.swatches = g;
         }
         if let Some(g) = p.pattern_groups {
             st.pattern_groups = g;
@@ -312,6 +324,7 @@ pub fn specs() -> Vec<CommandSpec> {
     v.extend(patterns::specs());
     v.extend(styles::specs());
     v.extend(shapes::specs());
+    v.extend(swatches::specs());
     v.extend(tools::specs());
     v.extend(clone_source::specs());
     v

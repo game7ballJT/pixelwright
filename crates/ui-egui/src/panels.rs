@@ -1069,8 +1069,8 @@ fn dock_body(app: &mut PixelwrightApp, ui: &mut egui::Ui, group: crate::dock::Gr
         (Group::Color, 2) => crate::preset_panels::gradients_panel(app, ui),
         (Group::Color, 3) => crate::preset_panels::patterns_panel(app, ui),
         (Group::Color, 0) if pro => color_field(app, ui),
-        (Group::Color, _) if pro => swatches(app, ui),
-        (Group::Color, 0) => swatches(app, ui),
+        (Group::Color, _) if pro => crate::swatches_ui::panel(app, ui),
+        (Group::Color, 0) => crate::swatches_ui::panel(app, ui),
         (Group::Color, _) => color_picker(app, ui),
         (Group::Properties, 0) => properties_body(app, ui),
         (Group::Properties, _) => adjustments_grid(app, ui),
@@ -1217,78 +1217,6 @@ fn empty(ui: &mut egui::Ui, s: &str) {
     ui.add_space(6.0);
     ui.label(RichText::new(s).color(t.text_faint));
     ui.add_space(6.0);
-}
-
-const SWATCHES: [[u8; 3]; 40] = [
-    [0, 0, 0],
-    [26, 26, 26],
-    [51, 51, 51],
-    [77, 77, 77],
-    [102, 102, 102],
-    [128, 128, 128],
-    [153, 153, 153],
-    [179, 179, 179],
-    [204, 204, 204],
-    [255, 255, 255],
-    [236, 128, 128],
-    [244, 176, 132],
-    [250, 224, 128],
-    [214, 240, 128],
-    [150, 232, 150],
-    [128, 232, 200],
-    [128, 220, 240],
-    [128, 176, 244],
-    [168, 144, 244],
-    [232, 144, 232],
-    [230, 40, 40],
-    [245, 120, 30],
-    [250, 210, 30],
-    [160, 220, 40],
-    [40, 200, 80],
-    [30, 200, 170],
-    [30, 170, 230],
-    [40, 100, 230],
-    [120, 70, 220],
-    [210, 50, 180],
-    [120, 20, 20],
-    [130, 60, 10],
-    [130, 110, 10],
-    [80, 120, 20],
-    [20, 100, 40],
-    [10, 100, 90],
-    [10, 80, 120],
-    [20, 50, 120],
-    [60, 30, 110],
-    [110, 20, 90],
-];
-
-fn swatches(app: &mut PixelwrightApp, ui: &mut egui::Ui) {
-    let t = Tokens::get(ui.ctx());
-    let cols = 10;
-    let gap = 4.0;
-    let w = ui.available_width();
-    let cell = ((w - gap * (cols as f32 - 1.0)) / cols as f32).floor();
-    let rows = SWATCHES.len().div_ceil(cols);
-    let (area, _) = ui.allocate_exact_size(vec2(w, rows as f32 * (cell + gap)), Sense::hover());
-    for (i, s) in SWATCHES.iter().enumerate() {
-        let (cx, cy) = ((i % cols) as f32, (i / cols) as f32);
-        let r = Rect::from_min_size(area.min + vec2(cx * (cell + gap), cy * (cell + gap)), Vec2::splat(cell));
-        let resp = ui.interact(r, ui.id().with(("sw", i)), Sense::click());
-        ui.painter().rect_filled(r, 4.0, Color32::from_rgb(s[0], s[1], s[2]));
-        if resp.hovered() {
-            ui.painter().rect_stroke(r, 4.0, Stroke::new(1.5, t.text), StrokeKind::Outside);
-        }
-        let c = [s[0] as f32 / 255.0, s[1] as f32 / 255.0, s[2] as f32 / 255.0, 1.0];
-        if resp.clicked() {
-            app.session.tools.foreground = c;
-            crate::type_tool::foreground_changed(app);
-        }
-        if resp.secondary_clicked() {
-            app.session.tools.background = c;
-        }
-    }
-    ui.add_space(2.0);
-    ui.label(RichText::new(tl!("Click sets foreground · right-click sets background")).small().color(t.text_faint));
 }
 
 fn color_picker(app: &mut PixelwrightApp, ui: &mut egui::Ui) {
@@ -2831,16 +2759,16 @@ mod swatch_type_tests {
         app.ui.tool = Tool::Type;
         app.ui.text_edit =
             Some(crate::state::TextEdit { layer: id, caret: 0, anchor: 5, session: "s".into(), created: false, dragging: false, resize: None, preedit: None });
-        let mut h = Harness::builder().with_size(vec2(300.0, 200.0)).build_ui_state(|ui, app: &mut PixelwrightApp| swatches(app, ui), app);
+        let mut h = Harness::builder().with_size(vec2(300.0, 200.0)).build_ui_state(|ui, app: &mut PixelwrightApp| crate::swatches_ui::panel(app, ui), app);
         h.run_steps(2);
-        // The first swatch is the top-left cell of the panel's content.
-        let p = h.ctx.input(|i| i.viewport_rect()).min + vec2(12.0, 12.0);
+        // The first swatch (Black) is the first cell of the Default group.
+        let p = h.ctx.data(|d| d.get_temp::<egui::Rect>(crate::swatches_ui::first_rect_id())).expect("the first swatch was drawn").center();
         h.hover_at(p);
         h.run_steps(1);
         h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
         h.event(egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
         h.run_steps(2);
-        let s = SWATCHES[0];
+        let s = [0u8, 0, 0];
         assert_eq!(h.state().session.tools.foreground, [s[0] as f32 / 255.0, s[1] as f32 / 255.0, s[2] as f32 / 255.0, 1.0]);
         let st = h.state().session.active().unwrap();
         let Some(pixelwright_doc::LayerContent::Text(t)) = st.doc.layer(pixelwright_doc::LayerId(id)).map(|l| &l.content) else { panic!("type layer") };

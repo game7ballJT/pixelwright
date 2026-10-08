@@ -100,6 +100,7 @@ pub mod plugin_ui;
 pub mod point_curve;
 pub mod prefs_ui;
 pub mod preset_files_ui;
+pub mod swatches_ui;
 pub mod preset_panels;
 pub mod props_layout;
 pub mod proxy;

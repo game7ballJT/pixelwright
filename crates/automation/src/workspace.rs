@@ -262,6 +262,9 @@ fn command_uses_ambient_path(id: &str, params: &Value) -> bool {
             // `data` wins over `path` in these commands; any `path` without it reads the filesystem.
             params.get("data").is_none() && params.get("path").is_some()
         }
+        // Swatch export writes `path` (without one it returns the file as data, which is safe).
+        "swatch.presets.importAco" | "swatch.presets.importAse" => params.get("data").is_none() && params.get("path").is_some(),
+        "swatch.presets.exportAco" | "swatch.presets.exportAse" => params.get("path").is_some(),
         "plugin.reload" => true,
         _ => false,
     }
