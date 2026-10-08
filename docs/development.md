@@ -21,7 +21,7 @@ Image code is slow at `opt-level 0`, so the workspace profile builds dependencie
 
 ## Fonts (craft-fonts)
 
-Optional font assets live in the upstream [storytold/craft-fonts](https://github.com/storytold/craft-fonts) repository, never in this repo: don't commit font files here (Inter and JetBrains Mono in `assets/fonts/` are the only exceptions; new fonts go to craft-fonts). The rules are in [`craftrules/standards/fonts.md`](../../craftrules/standards/fonts.md) ([on GitHub](https://github.com/storytold/craftrules/blob/main/standards/fonts.md)).
+Optional font assets live in the upstream [storytold/craft-fonts](https://github.com/storytold/craft-fonts) repository, never in this repo: don't commit font files here (Inter and JetBrains Mono in `assets/fonts/` are the only exceptions; new fonts go to craft-fonts).
 
 craft-fonts is an **optional build input**, never a Cargo dependency:
 
@@ -102,6 +102,8 @@ cargo run -p pixelwright-cli -- run in.png --cmd layer.new.layer --params '{"nam
 cargo run -p pixelwright-cli -- run --new '{"width":800,"height":600}' --cmd document.inspect
 cargo run -p pixelwright-cli -- batch --actions actions.json --in photos/ --out done/ --format jpg
 cargo run -p pixelwright-cli -- commands --filter blur                    # the command registry
+cargo run -p pixelwright-cli -- palette photo.jpg --count 8 --format hex  # the colours the image is made of
+cargo run -p pixelwright-cli -- diff a.png b.png --threshold 4 --out heat.png --fail   # pixel difference, exit 1 if any
 ```
 
 `actions.json` holds the steps of a recorded action: `[["<id>", {…}], …]`, `[{"command": "<id>", "params": {…}}, …]` or bare ids, as a list or wrapped in `{"actions": …}` or `{"steps": …}`; a droplet file works too. `batch` refuses an `--out` folder that is the `--in` folder, since the results would replace the originals, unless `--in-place` is given. `run` prints one JSON line per command result.
@@ -268,12 +270,10 @@ summary before trusting a regression, and record it next to any number you quote
 bench `--json` support through `pixelwright_testkit::perf::{row, report, write_report}`, then add a
 `[[scenario]]` to `perf/budgets.toml` and run `cargo xtask scorecard`.
 
-**CI.** `ci.yml` runs `cargo xtask scorecard --check`. `perf-nightly.yml` runs `cargo xtask perf`
-on a fixed macOS runner every night (and on demand), posts the table as the job summary, uploads
-`results.json`, and fails on a broken budget or regression. It never runs on pull requests: the
-release build of the benches alone takes longer than PR CI should. To give the nightly runner
-its own baseline, run the workflow by hand with `update_baseline` and commit the `perf-baseline`
-artifact as `perf/baseline.json`.
+**CI.** `ci.yml` runs `cargo xtask scorecard --check`. The upstream project also ran `cargo xtask perf`
+nightly on a fixed macOS runner; Pixelwright does not (the release build of the benches takes longer
+than PR CI should). Run `cargo xtask perf` by hand to check the budgets, and
+`cargo xtask perf --update-baseline` to write `perf/baseline.json` for your own machine class.
 
 ## Web build
 
@@ -288,7 +288,7 @@ trunk serve --release              # dev server on http://127.0.0.1:8765
 
 Any static file server works for `dist/web`, for example `python3 -m http.server 8765` run inside that directory. Trunk downloads the matching `wasm-bindgen` and `wasm-opt` itself. `trunk build --release` uses the `wasm-release` Cargo profile (`data-cargo-profile` in `index.html`: fat LTO, opt-level "s" except the pixel crates). The `.wasm` is about 18.8 MiB raw, 7.8 MiB gzipped and 5.6 MiB with Brotli; serve it with compression. Keep it under 24 MiB (`packaging/web/package.sh` enforces this; Cloudflare's per-file cap is 25 MiB). The web build never embeds craft-fonts (see Fonts above). To see where the bytes go, run `twiggy top -n 40` on `target/wasm32-unknown-unknown/wasm-release/pixelwright-web.wasm` (before wasm-opt strips the names).
 
-URL flags: `?webgl` forces the WebGL2 backend, and `?cpu` forces the CPU canvas path.
+URL flags: `?webgl` forces the WebGL2 backend, and `?cpu` forces the CPU canvas path. `?open=samples/<name>.jpg` fetches a same-origin file (the web build bundles four public-domain sample images in `apps/pixelwright-web/samples/`, also offered on the start screen) and opens it; a path that leaves the page's own origin is ignored.
 
 How the web shell (`apps/pixelwright-web/src/web.rs`) differs from desktop:
 

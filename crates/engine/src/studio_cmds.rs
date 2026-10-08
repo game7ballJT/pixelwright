@@ -449,10 +449,14 @@ fn auto_straighten(s: &mut Session, p: &Value) -> Result<Value> {
     // A line that slopes down to the right is levelled by turning the image counter-clockwise.
     let rotate_cw = -tilt;
     if rotate_cw.abs() < 0.15 || !apply {
-        return Ok(json!({ "angle": round(rotate_cw), "confidence": round(confidence), "applied": false, "reason": if apply { "already level" } else { "measure only" } }));
+        return Ok(
+            json!({ "angle": round(rotate_cw), "confidence": round(confidence), "applied": false, "reason": if apply { "already level" } else { "measure only" } }),
+        );
     }
     let r = crate::analysis_cmds::straighten_by(s, rotate_cw, crop)?;
-    Ok(json!({ "angle": round(rotate_cw), "confidence": round(confidence), "applied": true, "width": r["width"], "height": r["height"], "cropped": r["cropped"] }))
+    Ok(
+        json!({ "angle": round(rotate_cw), "confidence": round(confidence), "applied": true, "width": r["width"], "height": r["height"], "cropped": r["cropped"] }),
+    )
 }
 
 pub fn specs() -> Vec<CommandSpec> {

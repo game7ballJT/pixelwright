@@ -5,12 +5,9 @@
 # uploaded and no secrets are used.
 name: FreeBSD
 
-# The VM build takes one to several hours, so it runs nightly on main rather than on every push
-# or dependency change: a drifted dependency still shows up within a day. PRs that change the
-# FreeBSD packaging itself still run it.
+# The VM build takes one to several hours, so it runs on demand and on PRs that change the FreeBSD
+# packaging itself (the upstream project runs it nightly; Pixelwright leaves that off).
 on:
-  schedule:
-    - cron: "17 2 * * *"
   pull_request:
     paths:
       - .github/workflows/freebsd.yml

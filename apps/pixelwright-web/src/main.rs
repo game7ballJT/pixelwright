@@ -45,7 +45,16 @@ mod tests {
         for ok in ["samples/wave.jpg", "/apps/pixelwright/samples/a.png", "a.png"] {
             assert!(super::is_same_origin_path(ok), "{ok}");
         }
-        for bad in ["", "https://evil.example/a.png", "//evil.example/a.png", "javascript:alert(1)", "data:image/png;base64,AA", "../secret.png", "a/../../b.png", "a\\b.png"] {
+        for bad in [
+            "",
+            "https://evil.example/a.png",
+            "//evil.example/a.png",
+            "javascript:alert(1)",
+            "data:image/png;base64,AA",
+            "../secret.png",
+            "a/../../b.png",
+            "a\\b.png",
+        ] {
             assert!(!super::is_same_origin_path(bad), "{bad}");
         }
     }

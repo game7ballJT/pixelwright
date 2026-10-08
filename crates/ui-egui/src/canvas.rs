@@ -445,7 +445,11 @@ fn display_image(display: Option<&pixelwright_engine::display_color::CanvasDispl
 /// The canvas display of `doc` on `display` (`None`: the main window's) and a key that changes
 /// with it (folded into the canvas caches' preview keys, so a monitor or profile change
 /// re-renders).
-fn canvas_display(app: &PixelwrightApp, doc: &Document, display: Option<u32>) -> (Option<std::sync::Arc<pixelwright_engine::display_color::CanvasDisplay>>, u64) {
+fn canvas_display(
+    app: &PixelwrightApp,
+    doc: &Document,
+    display: Option<u32>,
+) -> (Option<std::sync::Arc<pixelwright_engine::display_color::CanvasDisplay>>, u64) {
     match app.session.color.canvas_display_for(doc, display.or(app.session.color.main_display)) {
         Ok(d) => {
             let k = d.key;

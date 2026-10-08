@@ -4,7 +4,7 @@
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::corpus_pins::{self, AG_PSD_COMMIT, HEIC_RS_COMMIT, PIXELWRIGHT_CORPUS_COMMIT, PILLOW_HEIF_COMMIT, PNGSUITE_URL, PSD_TOOLS_COMMIT};
+use crate::corpus_pins::{self, AG_PSD_COMMIT, HEIC_RS_COMMIT, PILLOW_HEIF_COMMIT, PIXELWRIGHT_CORPUS_COMMIT, PNGSUITE_URL, PSD_TOOLS_COMMIT};
 use crate::pinned::USER_AGENT;
 use crate::{cargo, root, run};
 

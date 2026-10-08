@@ -67,7 +67,7 @@ at the commit in `CRAFT_FONTS_REF` (top of `release.yml`) and builds with `CRAFT
 `docs/development.md` › Fonts) and fail rather than ship without them. The packages carry each font's licence as
 `OFL-<family>.txt` (`copy_font_licences` in `packaging/env.sh`; the portable zip on Windows;
 `Contents/Resources/Licenses` in the macOS app). Bump the pin deliberately, together with the one
-in `ci.yml`. Rules: `../craftrules/standards/fonts.md`; build option: `docs/development.md` › Fonts.
+in `ci.yml`. Build option: `docs/development.md` › Fonts.
 
 ### macOS
 

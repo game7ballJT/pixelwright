@@ -83,9 +83,46 @@ fn parse_color(v: &Value) -> Option<[f32; 3]> {
 /// The 40 colours the panel always had, now with names, as the "Default" group.
 pub fn builtin() -> Vec<Group<Swatch>> {
     const NAMES: [&str; 40] = [
-        "Black", "Gray 90", "Gray 80", "Gray 70", "Gray 60", "Gray 50", "Gray 40", "Gray 30", "Gray 20", "White", "Pastel Red", "Pastel Orange", "Pastel Yellow",
-        "Pastel Lime", "Pastel Green", "Pastel Mint", "Pastel Sky", "Pastel Blue", "Pastel Violet", "Pastel Pink", "Red", "Orange", "Yellow", "Lime", "Green", "Teal",
-        "Cyan", "Blue", "Violet", "Magenta", "Dark Red", "Brown", "Olive", "Moss", "Forest", "Deep Teal", "Deep Blue", "Navy", "Indigo", "Plum",
+        "Black",
+        "Gray 90",
+        "Gray 80",
+        "Gray 70",
+        "Gray 60",
+        "Gray 50",
+        "Gray 40",
+        "Gray 30",
+        "Gray 20",
+        "White",
+        "Pastel Red",
+        "Pastel Orange",
+        "Pastel Yellow",
+        "Pastel Lime",
+        "Pastel Green",
+        "Pastel Mint",
+        "Pastel Sky",
+        "Pastel Blue",
+        "Pastel Violet",
+        "Pastel Pink",
+        "Red",
+        "Orange",
+        "Yellow",
+        "Lime",
+        "Green",
+        "Teal",
+        "Cyan",
+        "Blue",
+        "Violet",
+        "Magenta",
+        "Dark Red",
+        "Brown",
+        "Olive",
+        "Moss",
+        "Forest",
+        "Deep Teal",
+        "Deep Blue",
+        "Navy",
+        "Indigo",
+        "Plum",
     ];
     const RGB: [[u8; 3]; 40] = [
         [0, 0, 0],
@@ -147,10 +184,7 @@ pub fn to_srgb(c: &SwatchColor) -> [f32; 3] {
 }
 
 fn from_file(file: &files::SwatchFile) -> Vec<Group<Swatch>> {
-    file.groups
-        .iter()
-        .map(|g| Group::new(&g.name, g.swatches.iter().map(|s| Swatch { name: s.name.clone(), color: to_srgb(&s.color) }).collect()))
-        .collect()
+    file.groups.iter().map(|g| Group::new(&g.name, g.swatches.iter().map(|s| Swatch { name: s.name.clone(), color: to_srgb(&s.color) }).collect())).collect()
 }
 
 fn to_file(groups: &[&Group<Swatch>]) -> Vec<SwatchGroup> {
@@ -231,7 +265,13 @@ fn hue_key(c: [f32; 3]) -> f32 {
     if d < 0.08 {
         return 400.0 + (1.0 - luma(c));
     }
-    let h = if mx == c[0] { ((c[1] - c[2]) / d).rem_euclid(6.0) } else if mx == c[1] { (c[2] - c[0]) / d + 2.0 } else { (c[0] - c[1]) / d + 4.0 };
+    let h = if mx == c[0] {
+        ((c[1] - c[2]) / d).rem_euclid(6.0)
+    } else if mx == c[1] {
+        (c[2] - c[0]) / d + 2.0
+    } else {
+        (c[0] - c[1]) / d + 4.0
+    };
     h * 60.0
 }
 
@@ -245,7 +285,8 @@ fn group_by_name<'a>(groups: &'a [Group<Swatch>], name: Option<&str>, cmd: &str)
 }
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
-    let groups: Vec<Value> = s.presets.swatches.iter().map(|g| json!({"name": g.name, "swatches": g.items.iter().map(Swatch::to_json).collect::<Vec<_>>()})).collect();
+    let groups: Vec<Value> =
+        s.presets.swatches.iter().map(|g| json!({"name": g.name, "swatches": g.items.iter().map(Swatch::to_json).collect::<Vec<_>>()})).collect();
     Ok(json!({"groups": groups}))
 }
 
@@ -313,7 +354,11 @@ fn from_image(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "swatch.presets.fromImage";
     let count = match p.get("count") {
         None | Some(Value::Null) => 8,
-        Some(v) => v.as_f64().filter(|x| x.is_finite()).map(|x| x.round().clamp(2.0, 64.0) as usize).ok_or_else(|| bad(CMD, "`count` must be a number from 2 to 64"))?,
+        Some(v) => v
+            .as_f64()
+            .filter(|x| x.is_finite())
+            .map(|x| x.round().clamp(2.0, 64.0) as usize)
+            .ok_or_else(|| bad(CMD, "`count` must be a number from 2 to 64"))?,
     };
     let sort = match str_param(p, "sort").unwrap_or("prominence") {
         t @ ("prominence" | "hue" | "lightness") => t,
@@ -321,7 +366,8 @@ fn from_image(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let colors = prominent_colors(s, count, sort)?;
     let doc_name = s.active().map(|d| d.doc.name.clone()).unwrap_or_default();
-    let base = str_param(p, "name").map(str::to_string).unwrap_or_else(|| if doc_name.is_empty() { "Palette".into() } else { format!("Palette of {doc_name}") });
+    let base =
+        str_param(p, "name").map(str::to_string).unwrap_or_else(|| if doc_name.is_empty() { "Palette".into() } else { format!("Palette of {doc_name}") });
     let name = super::gradients::unique_group(&s.presets.swatches, &base);
     let items: Vec<Swatch> = colors.iter().map(|(c, _)| Swatch { name: hex_of(*c), color: *c }).collect();
     s.presets.swatches.push(Group::new(&name, items));
@@ -332,10 +378,15 @@ fn from_image(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn import(s: &mut Session, p: &Value, cmd: &str, ase: bool) -> Result<Value> {
     let (bytes, stem) = crate::preset_import_cmds::file_bytes(p, cmd, if ase { "an .ase file" } else { "an .aco file" })?;
-    let parsed = if ase { files::parse_ase(&bytes) } else { files::parse_aco(&bytes) }.map_err(|e| EngineError::Other(format!("not a readable swatch file: {e}")))?;
+    let parsed =
+        if ase { files::parse_ase(&bytes) } else { files::parse_aco(&bytes) }.map_err(|e| EngineError::Other(format!("not a readable swatch file: {e}")))?;
     let mut groups = from_file(&parsed);
     if groups.is_empty() {
-        return Err(EngineError::Other(if parsed.skipped > 0 { "the file only holds spot colours, which are not supported".into() } else { "the file holds no swatches".into() }));
+        return Err(EngineError::Other(if parsed.skipped > 0 {
+            "the file only holds spot colours, which are not supported".into()
+        } else {
+            "the file holds no swatches".into()
+        }));
     }
     let fallback = str_param(p, "group").map(str::to_string).or((!stem.is_empty()).then_some(stem)).unwrap_or_else(|| "Imported".into());
     let mut added = 0;

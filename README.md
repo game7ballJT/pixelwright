@@ -79,7 +79,7 @@ The live preview is the real program compiled to WebAssembly, running entirely i
 
 ## What's new in this fork
 
-First fixes and finished features from the roadmap, then additions of my own. Everything below is a registered command, so it appears in the menus and the command palette (⌘/Ctrl+K) and works from the CLI and MCP. Each has tests; the translation tables cover all 12 UI languages.
+First fixes and finished features from the roadmap, then additions of my own. Everything below is a registered command, so it appears in the menus and the command palette (⌘/Ctrl+K) and works from the CLI and MCP. Each has tests; the translation tables cover all 12 translated UI languages.
 
 <table>
   <tr>
@@ -99,6 +99,12 @@ First fixes and finished features from the roadmap, then additions of my own. Ev
     </td>
   </tr>
 </table>
+
+<p align="center">
+  <img src="docs/images/pixelwright-retouch.jpg" alt="Frequency Separation and a Dodge and Burn layer on Vermeer's Girl with a Pearl Earring; the Layers panel shows the Low and High layers in a group" width="100%">
+  <br>
+  <sub>Layer › New › Frequency Separation, then Dodge &amp; Burn Layer. The Low and High layers sit in a group; the original is hidden, not lost.<br><i>Girl with a Pearl Earring</i>, Johannes Vermeer, c. 1665</sub>
+</p>
 
 | Feature | Where | What it does |
 |---|---|---|

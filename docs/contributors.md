@@ -1,8 +1,7 @@
 # Contributors in the About window
 
 **About ▸ Contributors** credits everyone who contributed to Pixelwright, and **About ▸ Models** credits
-the AI models named in `Co-Authored-By` trailers. This follows the shared craftrules standard
-[`standards/contributors.md`](https://github.com/storytold/craftrules/blob/main/standards/contributors.md);
+the AI models named in `Co-Authored-By` trailers. The design comes from the upstream PhotoCraft project;
 this page is the local copy of the decision.
 
 ## Decision
@@ -10,7 +9,7 @@ this page is the local copy of the decision.
 - Two files, both **compiled into the binary** by the UI crate's `build.rs` (nothing is read from
   disk or the network at run time; the web build has them too):
   - [`contributors/contributors.json`](../contributors/contributors.json): commit stats per GitHub
-    username. **Generated** by `craftrules/scripts/contributors.py`; never hand-edit.
+    username. **Generated** upstream by a script from the commit history (a private tool of the original authors). The upstream rows are kept as they were; the Pixelwright row (`game7ballJT`) was computed from this fork's git log (`git log --numstat`) and is refreshed by hand at release time.
   - [`contributors/people.toml`](../contributors/people.toml): the names people chose for
     themselves. **Each contributor adds only their own entry**, in their own PR.
 - Each contributor gets one line: GitHub username (always), display name (opt-in, or their synced
@@ -38,20 +37,10 @@ display_name = "Nickname"
 sync_github_name = true   # use the name on your public GitHub profile as display name
 ```
 
-or, with craftrules checked out next to `craft-apps/`:
-
-```sh
-python3 ../../craftrules/scripts/contributors.py --add-me . --real-name "Your Name" --sync-github-name
-```
-
-Names show after the next refresh: the script checks that each entry was committed by its own
-user (or by a maintainer with a `consent_source`). Delete your entry to remove your names.
+Names show after the next refresh of `contributors/contributors.json` (a row needs `"people_entry": true`
+to use the name from `people.toml`). Delete your entry to remove your names.
 
 ## Refreshing (maintainers)
 
-```sh
-python3 ../../craftrules/scripts/contributors.py .           # regenerate + verify; needs git, Python 3.11+, gh
-python3 ../../craftrules/scripts/contributors.py --check .   # verify people.toml only
-```
-
-Commit the updated `contributors/contributors.json`. Git author names and emails are never recorded.
+Recount your commits with `git log --numstat` and update your row in `contributors/contributors.json`, then
+commit it. Git author names and emails are never recorded.

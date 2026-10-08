@@ -398,7 +398,8 @@ fn psd_placed_layer_renders_from_lnk2_data() {
     );
     inner.layers[0].surface_mut().unwrap().fill_rect(Rect::new(0, 0, 5, 8), &[1.0, 0.0, 0.0, 1.0]);
     let png = pixelwright_io::export(&inner, "png", &Default::default()).unwrap().bytes;
-    let lnk2 = pixelwright_io::linked::encode_linked_file(&pixelwright_io::linked::LinkedFile { uuid: "uuid-1".into(), file_name: "in.png".into(), bytes: png });
+    let lnk2 =
+        pixelwright_io::linked::encode_linked_file(&pixelwright_io::linked::LinkedFile { uuid: "uuid-1".into(), file_name: "in.png".into(), bytes: png });
     let mut s = session(8);
     s.edit("place", |doc, active| {
         doc.metadata.psd_global_blocks.push((*b"8BIM", *b"lnk2", Arc::new(lnk2)));

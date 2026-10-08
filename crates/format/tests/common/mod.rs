@@ -185,7 +185,10 @@ pub fn rich_doc(mode: ColorMode, depth: SampleType) -> Document {
                 density: 0.75,
                 feather: 0.0,
             }),
-            warp: Some(pixelwright_geom::warp::Warp::custom(pixelwright_geom::warp::BezierMesh::identity([0.0, 0.0, 48.0, 24.0], 2, 1), [0.0, 0.0, 48.0, 24.0])),
+            warp: Some(pixelwright_geom::warp::Warp::custom(
+                pixelwright_geom::warp::BezierMesh::identity([0.0, 0.0, 48.0, 24.0], 2, 1),
+                [0.0, 0.0, 48.0, 24.0],
+            )),
             stack_mode: Some(pixelwright_doc::StackMode::Median),
             // Distort / Perspective placement, so the round trip covers it.
             perspective: Some([1.0, 0.1, 2.0, 0.05, 1.0, 3.0, 0.001, 0.0005, 1.0]),

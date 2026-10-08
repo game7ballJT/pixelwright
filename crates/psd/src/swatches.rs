@@ -91,7 +91,12 @@ fn to_aco(c: &SwatchColor) -> (u16, [u16; 4]) {
         SwatchColor::Cmyk(v) => (2, [65535 - q(v[0]), 65535 - q(v[1]), 65535 - q(v[2]), 65535 - q(v[3])]),
         SwatchColor::Lab(v) => (
             7,
-            [(v[0].clamp(0.0, 100.0) * 100.0).round() as u16, (v[1].clamp(-128.0, 127.0) * 100.0).round() as i16 as u16, (v[2].clamp(-128.0, 127.0) * 100.0).round() as i16 as u16, 0],
+            [
+                (v[0].clamp(0.0, 100.0) * 100.0).round() as u16,
+                (v[1].clamp(-128.0, 127.0) * 100.0).round() as i16 as u16,
+                (v[2].clamp(-128.0, 127.0) * 100.0).round() as i16 as u16,
+                0,
+            ],
         ),
         SwatchColor::Gray(v) => (8, [(v.clamp(0.0, 1.0) * 10_000.0).round() as u16, 0, 0, 0]),
     }
@@ -403,10 +408,8 @@ mod tests {
 
     #[test]
     fn ase_round_trips_groups_and_models() {
-        let groups = vec![
-            SwatchGroup { name: String::new(), swatches: sample()[..1].to_vec() },
-            SwatchGroup { name: "Brand".into(), swatches: sample()[1..].to_vec() },
-        ];
+        let groups =
+            vec![SwatchGroup { name: String::new(), swatches: sample()[..1].to_vec() }, SwatchGroup { name: "Brand".into(), swatches: sample()[1..].to_vec() }];
         let bytes = write_ase(&groups);
         assert_eq!(&bytes[..4], b"ASEF");
         let f = parse_ase(&bytes).unwrap();

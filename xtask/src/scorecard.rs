@@ -562,8 +562,8 @@ here supersede estimates elsewhere.\n\n## Summary\n\n| Area | Done | Partial | M
     s.push_str("\n## Performance\n\n");
     s.push_str(&format!(
         "Budgets: `perf/budgets.toml` (targets from #209, #210, #211). Numbers: the committed baseline \
-(`perf/baseline.json`, full run), updated only by `cargo xtask perf --update-baseline`. The nightly \
-`perf-nightly` workflow runs `cargo xtask perf` on a fixed macOS runner and fails on a broken enforced \
+(`perf/baseline.json`, full run), updated only by `cargo xtask perf --update-baseline`. Run \
+`cargo xtask perf` yourself: it fails on a broken enforced \
 budget or a p50 regression over {:.0} % against a baseline from the same machine class. \"Over budget\" \
 rows are targets the code doesn't meet yet: they are reported, and only their regressions fail.\n\n",
         inp.budgets.settings.regression_pct

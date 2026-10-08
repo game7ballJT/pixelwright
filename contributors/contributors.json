@@ -8,6 +8,19 @@
   "unattributed_commits": 0,
   "contributors": [
     {
+      "login": "game7ballJT",
+      "people_entry": true,
+      "github_name": null,
+      "prs": 0,
+      "commits": 4,
+      "lines_added": 11838,
+      "lines_deleted": 9172,
+      "binary_added": 15,
+      "binary_deleted": 15,
+      "first_commit": "2026-10-08T18:12:33Z",
+      "last_commit": "2026-10-08T20:20:38Z"
+    },
+    {
       "login": "echelon",
       "people_entry": true,
       "github_name": null,

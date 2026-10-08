@@ -60,8 +60,10 @@ pub fn fall_back(app: &mut PixelwrightApp, fault: &pixelwright_gpu::Fault) {
 
 /// Help › System Info: version, platform and the graphics state.
 pub fn system_info(app: &PixelwrightApp) -> Vec<String> {
-    let mut v =
-        vec![format!("Pixelwright {}", pixelwright_engine::build_info::long_version()), format!("Platform: {} {}", std::env::consts::OS, std::env::consts::ARCH)];
+    let mut v = vec![
+        format!("Pixelwright {}", pixelwright_engine::build_info::long_version()),
+        format!("Platform: {} {}", std::env::consts::OS, std::env::consts::ARCH),
+    ];
     v.extend(app.perf.gpu_info.lines());
     v.extend(crate::monitor_status::summary_lines(app));
     v

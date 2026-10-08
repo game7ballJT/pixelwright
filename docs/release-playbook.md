@@ -1,7 +1,6 @@
 # Release playbook
 
-The upstream project (PhotoCraft) keeps a shared release playbook in its public `craftrules`
-repository ([`storytold/craftrules`](https://github.com/storytold/craftrules), `release/playbook.md`).
+The upstream project (PhotoCraft) keeps a shared release playbook in a private repository of its authors.
 Pixelwright follows its shape, simplified for a fork with no signing secrets; the live recipe is
 the workflow below.
 
