@@ -27,6 +27,7 @@ pixelwright-engine = { workspace = true }
 pixelwright-io = { workspace = true }
 pixelwright-format = { path = "../../crates/format" }
 pixelwright-codecs = { workspace = true }
+pixelwright-compose = { workspace = true }
 serde_json = { workspace = true }
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 

@@ -36,6 +36,19 @@ pub fn fuzzy_score(query: &str, text: &str) -> Option<i32> {
     Some(score - (t.len() as i32 / 8))
 }
 
+/// A palette row: (score, id, label, detail, enabled).
+type Hit = (i32, String, String, Option<String>, bool);
+
+/// Give the rows whose id was run recently a score above any search match, most recent highest, so
+/// an empty query lists them first.
+fn boost_recent(hits: &mut [Hit], recent: &[String]) {
+    for h in hits.iter_mut() {
+        if let Some(pos) = recent.iter().position(|r| *r == h.1) {
+            h.0 = 1000 - pos as i32;
+        }
+    }
+}
+
 pub fn show(app: &mut PixelwrightApp, ctx: &egui::Context) {
     if !app.ui.palette_open {
         return;
@@ -86,7 +99,7 @@ pub fn show(app: &mut PixelwrightApp, ctx: &egui::Context) {
                     crate::widgets::hairline(ui);
                     ui.add_space(6.0);
                     let lang = crate::i18n::Lang::from_pref(&app.session.prefs().interface.language);
-                    let mut hits: Vec<(i32, String, String, Option<String>, bool)> = crate::menus::menu_items(app)
+                    let mut hits: Vec<Hit> = crate::menus::menu_items(app)
                         .into_iter()
                         .filter_map(|m| {
                             let path_en = m.path.join(" › ");
@@ -107,6 +120,11 @@ pub fn show(app: &mut PixelwrightApp, ctx: &egui::Context) {
                         if let Some(s) = fuzzy_score(&q, &format!("{} {}", tl!(tool.label()), tool.label())) {
                             hits.push((s + 2, format!("tool:{tool:?}"), tl!(tool.label()).into(), Some(format!("Tool   {}", tool.key())), true));
                         }
+                    }
+                    // An empty query lists what was run recently first, in that order; the rest follow
+                    // alphabetically.
+                    if q.trim().is_empty() {
+                        boost_recent(&mut hits, &app.ui.recent_commands);
                     }
                     hits.sort_by(|a, b| b.0.cmp(&a.0).then(a.2.cmp(&b.2)));
                     hits.truncate(12);
@@ -167,6 +185,7 @@ pub fn show(app: &mut PixelwrightApp, ctx: &egui::Context) {
         });
     if let Some(id) = run {
         app.ui.palette_open = false;
+        app.ui.remember_command(&id);
         ctx.data_mut(|d| d.insert_temp(egui::Id::new("palette-query"), String::new()));
         if let Some(tool) = id.strip_prefix("tool:") {
             if let Some(t) = crate::state::Tool::from_name(tool) {
@@ -204,6 +223,36 @@ mod tests {
             })
             .collect();
         assert_eq!(interrupts, [None, Some(false), Some(false), Some(false)]);
+    }
+
+    #[test]
+    fn recent_commands_are_remembered_newest_first_without_duplicates() {
+        let mut ui = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default()).ui;
+        for id in ["a", "b", "c", "a"] {
+            ui.remember_command(id);
+        }
+        assert_eq!(ui.recent_commands, ["a", "c", "b"]);
+        for i in 0..20 {
+            ui.remember_command(&format!("cmd{i}"));
+        }
+        assert_eq!(ui.recent_commands.len(), crate::state::MAX_RECENT_COMMANDS);
+        assert_eq!(ui.recent_commands[0], "cmd19");
+    }
+
+    /// An empty query lists the commands just run before everything else, newest first; the
+    /// rest keep their order.
+    #[test]
+    fn recent_commands_rank_above_everything_else_newest_first() {
+        let row = |id: &str, score: i32| -> super::Hit { (score, id.to_string(), id.to_string(), None, true) };
+        let mut hits = vec![row("a", 0), row("b", 0), row("c", 0), row("d", 0)];
+        super::boost_recent(&mut hits, &["c".to_string(), "a".to_string()]);
+        hits.sort_by(|x, y| y.0.cmp(&x.0).then(x.2.cmp(&y.2)));
+        let order: Vec<&str> = hits.iter().map(|h| h.1.as_str()).collect();
+        assert_eq!(order, ["c", "a", "b", "d"]);
+        // No recents: nothing changes.
+        let mut same = vec![row("x", 3), row("y", 0)];
+        super::boost_recent(&mut same, &[]);
+        assert_eq!((same[0].0, same[1].0), (3, 0));
     }
 
     #[test]

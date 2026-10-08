@@ -7,8 +7,8 @@ use serde_json::{Value, json};
 use crate::PixelwrightApp;
 
 pub const APP_PAGE: &str = "https://www.jonmcgee.online/apps/pixelwright/";
-pub const GITHUB: &str = "https://github.com/GH_OWNER/pixelwright";
-pub const ISSUES: &str = "https://github.com/GH_OWNER/pixelwright/issues";
+pub const GITHUB: &str = "https://github.com/game7ballJT/pixelwright";
+pub const ISSUES: &str = "https://github.com/game7ballJT/pixelwright/issues";
 /// The project this fork is based on.
 pub const UPSTREAM: &str = "https://github.com/storytold/photocraft";
 
@@ -104,7 +104,7 @@ mod tests {
         let ctx = egui::Context::default();
         for (id, url) in [
             ("help.website", "https://www.jonmcgee.online/apps/pixelwright/"),
-            ("help.github", "https://github.com/GH_OWNER/pixelwright"),
+            ("help.github", "https://github.com/game7ballJT/pixelwright"),
             ("help.upstream", "https://github.com/storytold/photocraft"),
         ] {
             let r = crate::menus::invoke(&mut app, &ctx, id, serde_json::json!({})).unwrap();

@@ -108,7 +108,7 @@ fn read_name(r: &mut Reader<'_>, n: usize) -> Result<String> {
         return Err(PsdError::LimitExceeded("swatch name too long"));
     }
     let bytes = r.bytes(n * 2)?;
-    let units: Vec<u16> = bytes.chunks_exact(2).map(|p| u16::from_be_bytes([p[0], p[1]])).collect();
+    let units: Vec<u16> = bytes.as_chunks::<2>().0.iter().map(|p| u16::from_be_bytes(*p)).collect();
     Ok(units_to_string(&units))
 }
 

@@ -27,8 +27,8 @@
   <icon type="stock">online.jonmcgee.pixelwright</icon>
   <!-- Only url types known to appstream 0.15 (Ubuntu 22.04, where CI validates): no vcs-browser. -->
   <url type="homepage">https://www.jonmcgee.online/apps/pixelwright/</url>
-  <url type="bugtracker">https://github.com/GH_OWNER/pixelwright/issues</url>
-  <url type="help">https://github.com/GH_OWNER/pixelwright</url>
+  <url type="bugtracker">https://github.com/game7ballJT/pixelwright/issues</url>
+  <url type="help">https://github.com/game7ballJT/pixelwright</url>
   <url type="contact">https://www.jonmcgee.online/</url>
   <categories>
     <category>Graphics</category>
@@ -44,7 +44,7 @@
   <screenshots>
     <screenshot type="default">
       <caption>Editing The Great Wave off Kanagawa with type layers and adjustment layers</caption>
-      <image>https://raw.githubusercontent.com/GH_OWNER/pixelwright/main/docs/images/pixelwright-demo.jpg</image>
+      <image>https://raw.githubusercontent.com/game7ballJT/pixelwright/main/docs/images/pixelwright-demo.jpg</image>
     </screenshot>
   </screenshots>
   <branding>

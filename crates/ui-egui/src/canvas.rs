@@ -1407,6 +1407,21 @@ fn start_screen(app: &mut PixelwrightApp, ui: &mut egui::Ui) {
                 crate::icons::paint(ui, r, "image", 15.0, t.text_faint);
                 ui.label(egui::RichText::new(msg).color(t.text_faint));
             });
+            if !app.services.samples.is_empty() {
+                // The browser build bundles a few public-domain images to open without a file.
+                ui.add_space(18.0);
+                let samples = app.services.samples.clone();
+                ui.vertical_centered(|ui| {
+                    ui.label(egui::RichText::new(tl!("Or try a sample")).color(t.text_faint));
+                    for (label, url) in &samples {
+                        if ui.link(egui::RichText::new(label).color(t.accent)).on_hover_text(url).clicked()
+                            && let Some(open) = app.services.open_sample.as_mut()
+                        {
+                            open(url);
+                        }
+                    }
+                });
+            }
             if !recent.is_empty() {
                 ui.add_space(22.0);
                 home_recent(app, ui, &recent);

@@ -55,7 +55,7 @@ if (-not $haveCert -and -not $haveAzure) {
 }
 
 $script:SignTool = Find-SignTool
-$common = @('sign', '/v', '/fd', 'SHA256', '/td', 'SHA256', '/d', 'Pixelwright', '/du', 'https://github.com/GH_OWNER/pixelwright')
+$common = @('sign', '/v', '/fd', 'SHA256', '/td', 'SHA256', '/d', 'Pixelwright', '/du', 'https://github.com/game7ballJT/pixelwright')
 $tmp = Join-Path ([IO.Path]::GetTempPath()) "pixelwright-sign-$PID"
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 

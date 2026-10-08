@@ -50,6 +50,42 @@ pub fn config_dir() -> Option<PathBuf> {
     crate::app_dirs::config_dir()
 }
 
+/// File that remembers the folder the last Open or Save dialog ended in (next to the preferences).
+const LAST_FOLDER_FILE: &str = "last-folder.txt";
+
+/// The remembered dialog folder under `config`, if it still exists.
+fn last_folder_in(config: &Path) -> Option<PathBuf> {
+    let text = std::fs::read_to_string(config.join(LAST_FOLDER_FILE)).ok()?;
+    let dir = PathBuf::from(text.trim());
+    dir.is_dir().then_some(dir)
+}
+
+/// Remember the folder of `picked` under `config` (best effort: a dialog must never fail over it).
+fn remember_folder_in(config: &Path, picked: &Path) {
+    let Some(dir) = picked.parent().filter(|d| !d.as_os_str().is_empty()) else { return };
+    if last_folder_in(config).as_deref() == Some(dir) {
+        return;
+    }
+    let _ = std::fs::create_dir_all(config);
+    let _ = pixelwright_format::atomic_write(&config.join(LAST_FOLDER_FILE), dir.to_string_lossy().as_bytes());
+}
+
+/// A dialog that opens in the folder the last one ended in, so File › Open and Save As do not
+/// jump back to the system default every time.
+fn dialog_here() -> rfd::FileDialog {
+    let d = rfd::FileDialog::new();
+    match config_dir().and_then(|c| last_folder_in(&c)) {
+        Some(dir) => d.set_directory(dir),
+        None => d,
+    }
+}
+
+fn remember_folder(picked: &Path) {
+    if let Some(c) = config_dir() {
+        remember_folder_in(&c, picked);
+    }
+}
+
 pub fn prefs_file() -> Option<PathBuf> {
     config_dir().map(|d| d.join("preferences.json"))
 }
@@ -164,28 +200,36 @@ pub fn native(automation: Option<pixelwright_automation::AuthorizedWorkspace>) -
             crate::crash_guard::guard("Export", || pixelwright_io::export(doc, path, &opts).map(|r| (r.bytes, r.warnings)).map_err(|e| e.to_string()))
         })),
         pick_open: Some(Box::new(|| {
-            let path = rfd::FileDialog::new().add_filter("All Formats", OPEN_EXTS).add_filter("Pixelwright", &["pxwr"]).pick_file()?;
+            let path = dialog_here().add_filter("All Formats", OPEN_EXTS).add_filter("Pixelwright", &["pxwr"]).pick_file()?;
+            remember_folder(&path);
             // A read failure goes back to the app, which reports it like any other open failure.
             let bytes = pixelwright_format::read_file(&path).map_err(|e| e.to_string());
             Some((path.to_string_lossy().to_string(), bytes))
         })),
         pick_open_paths: Some(Box::new(|| {
-            rfd::FileDialog::new()
-                .add_filter("All Formats", OPEN_EXTS)
-                .add_filter("Pixelwright", &["pxwr"])
-                .pick_files()
-                .map(|paths| paths.into_iter().map(|path| path.to_string_lossy().into_owned()).collect())
+            let paths = dialog_here().add_filter("All Formats", OPEN_EXTS).add_filter("Pixelwright", &["pxwr"]).pick_files()?;
+            if let Some(first) = paths.first() {
+                remember_folder(first);
+            }
+            Some(paths.into_iter().map(|path| path.to_string_lossy().into_owned()).collect())
         })),
         pick_save: Some(Box::new(|suggested: &str| {
             let p = std::path::Path::new(suggested);
-            let mut d = rfd::FileDialog::new();
+            // A suggestion that names a folder (Save on a document that has a path) starts there;
+            // otherwise the folder of the last dialog.
+            let mut d = match p.parent().filter(|d| !d.as_os_str().is_empty() && d.is_dir()) {
+                Some(dir) => rfd::FileDialog::new().set_directory(dir),
+                None => dialog_here(),
+            };
             for (name, exts) in save_filters(suggested) {
                 d = d.add_filter(name, exts);
             }
             if let Some(name) = p.file_name() {
                 d = d.set_file_name(name.to_string_lossy());
             }
-            Some(d.save_file()?.to_string_lossy().to_string())
+            let saved = d.save_file()?;
+            remember_folder(&saved);
+            Some(saved.to_string_lossy().to_string())
         })),
         write: Some(Box::new(|path: &str, bytes: &[u8]| write_atomic(Path::new(path), bytes))),
         automation_read,
@@ -472,5 +516,44 @@ mod tests {
         std::fs::write(&bin, tga_1x1()).unwrap();
         assert_eq!(image_from_files(&[tga]), Some((1, 1, vec![255, 0, 0, 255])));
         assert!(image_from_files(&[bin]).is_none());
+    }
+}
+
+#[cfg(test)]
+mod folder_tests {
+    use super::*;
+
+    fn temp(name: &str) -> PathBuf {
+        let d = std::env::temp_dir().join(format!("pixelwright-folder-{}-{name}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&d);
+        std::fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn the_last_dialog_folder_is_remembered_and_survives_a_restart() {
+        let config = temp("config");
+        let photos = temp("photos");
+        assert_eq!(last_folder_in(&config), None, "nothing remembered yet");
+        remember_folder_in(&config, &photos.join("wave.psd"));
+        assert_eq!(last_folder_in(&config), Some(photos.clone()));
+        // A different folder replaces it; a vanished folder is forgotten rather than offered.
+        let other = temp("other");
+        remember_folder_in(&config, &other.join("a.png"));
+        assert_eq!(last_folder_in(&config), Some(other.clone()));
+        std::fs::remove_dir_all(&other).unwrap();
+        assert_eq!(last_folder_in(&config), None);
+        let _ = std::fs::remove_dir_all(&config);
+        let _ = std::fs::remove_dir_all(&photos);
+    }
+
+    #[test]
+    fn odd_paths_never_fail() {
+        let config = temp("odd");
+        remember_folder_in(&config, Path::new(""));
+        remember_folder_in(&config, Path::new("name-only.png"));
+        remember_folder_in(&config.join("missing").join("dir"), &config.join("x.png"));
+        assert_eq!(last_folder_in(&config), None);
+        let _ = std::fs::remove_dir_all(&config);
     }
 }

@@ -11,6 +11,11 @@
 //!   video colourmaps for checking the legibility of displays by dichromats", Color Research &
 //!   Application 24(4): linear RGB → LMS, the missing cone response replaced by its projection
 //!   onto the dichromat's plane, back to RGB (gamut first reduced as in the paper).
+//!   Tritanopia-type (blue-yellow) and Achromatopsia (no colour vision, luminance only) are
+//!   additions of this fork. The single projection plane of the 1999 paper does not hold for
+//!   tritanopia (it turns red yellow), so that one uses the severity-1.0 matrix of Machado,
+//!   Oliveira & Fernandes (2009), "A Physiologically-based Model for Simulation of Color Vision
+//!   Deficiency", IEEE TVCG 15(6), applied to linear RGB.
 //! * 32-bit Preview Options: exposure (stops) and gamma applied in linear light before the
 //!   display transform, for 32-bit documents. Highlight Compression maps the canvas range to the
 //!   display unchanged: the canvas texture is clamped to 0–1, so there is nothing above white
@@ -40,6 +45,10 @@ pub enum ProofKind {
     LegacyMacintoshRgb,
     Protanopia,
     Deuteranopia,
+    /// Blue-yellow dichromacy (no S cones).
+    Tritanopia,
+    /// No colour vision: only luminance is seen.
+    Achromatopsia,
 }
 
 impl ProofKind {
@@ -54,6 +63,8 @@ impl ProofKind {
             ProofKind::LegacyMacintoshRgb => "legacyMacintoshRgb",
             ProofKind::Protanopia => "colorBlindnessProtanopia",
             ProofKind::Deuteranopia => "colorBlindnessDeuteranopia",
+            ProofKind::Tritanopia => "colorBlindnessTritanopia",
+            ProofKind::Achromatopsia => "colorBlindnessAchromatopsia",
         }
     }
     pub fn from_id(s: &str) -> Option<ProofKind> {
@@ -67,6 +78,8 @@ impl ProofKind {
             "legacyMacintoshRgb" => ProofKind::LegacyMacintoshRgb,
             "colorBlindnessProtanopia" => ProofKind::Protanopia,
             "colorBlindnessDeuteranopia" => ProofKind::Deuteranopia,
+            "colorBlindnessTritanopia" => ProofKind::Tritanopia,
+            "colorBlindnessAchromatopsia" => ProofKind::Achromatopsia,
             _ => return None,
         })
     }
@@ -137,10 +150,32 @@ fn mul(m: &[[f32; 3]; 3], v: [f32; 3]) -> [f32; 3] {
 
 /// Simulate a dichromat's view of a linear-RGB colour.
 pub fn dichromat(rgb_lin: [f32; 3], protan: bool) -> [f32; 3] {
+    dichromat_kind(rgb_lin, if protan { ProofKind::Protanopia } else { ProofKind::Deuteranopia })
+}
+
+/// Machado et al. (2009), tritanopia at severity 1.0: linear RGB → linear RGB. Every row sums to
+/// 1, so greys are untouched.
+const TRITAN: [[f32; 3]; 3] = [[1.255_528, -0.076_749, -0.178_779], [-0.078_411, 0.930_809, 0.147_602], [0.004_733, 0.691_367, 0.303_900]];
+
+/// [`dichromat`] for any colour-blindness kind: Protanopia and Deuteranopia project the missing
+/// cone onto the dichromat's plane, Tritanopia applies its matrix, Achromatopsia keeps only the
+/// luminance. Other kinds return the colour unchanged.
+pub fn dichromat_kind(rgb_lin: [f32; 3], kind: ProofKind) -> [f32; 3] {
+    if kind == ProofKind::Achromatopsia {
+        let y = (0.2126 * rgb_lin[0] + 0.7152 * rgb_lin[1] + 0.0722 * rgb_lin[2]).clamp(0.0, 1.0);
+        return [y; 3];
+    }
+    if kind == ProofKind::Tritanopia {
+        return mul(&TRITAN, rgb_lin).map(|c| c.clamp(0.0, 1.0));
+    }
     // Gamut reduction so the simulated colours stay displayable.
     let v = rgb_lin.map(|c| 0.992_052 * c + 0.003_974);
     let [l, m, s] = mul(&RGB_LMS, v);
-    let lms = if protan { [2.02344 * m - 2.52581 * s, m, s] } else { [l, 0.494_207 * l + 1.24827 * s, s] };
+    let lms = match kind {
+        ProofKind::Protanopia => [2.02344 * m - 2.52581 * s, m, s],
+        ProofKind::Deuteranopia => [l, 0.494_207 * l + 1.24827 * s, s],
+        _ => return rgb_lin,
+    };
     mul(&LMS_RGB, lms).map(|c| c.clamp(0.0, 1.0))
 }
 
@@ -195,13 +230,12 @@ pub fn display_lut_with(c: &ColorState, doc: &Document, size: usize, include_hdr
             // Numbers preserved, shown with a 1.8 gamma instead of the sRGB curve.
             Box::new(move |v| eval3(&t, &v.map(|x| srgb_encode(x.max(0.0).powf(1.8)))))
         }
-        ProofKind::Protanopia | ProofKind::Deuteranopia => {
+        ProofKind::Protanopia | ProofKind::Deuteranopia | ProofKind::Tritanopia | ProofKind::Achromatopsia => {
             let to_srgb = Transform::new(&src, srgb, Intent::RelativeColorimetric, true).map_err(err)?;
             let to_mon = Transform::new(srgb, &mon, Intent::RelativeColorimetric, true).map_err(err)?;
-            let protan = kind == ProofKind::Protanopia;
             Box::new(move |v| {
                 let s = eval3(&to_srgb, &v);
-                let sim = dichromat(s.map(srgb_decode), protan).map(srgb_encode);
+                let sim = dichromat_kind(s.map(srgb_decode), kind).map(srgb_encode);
                 eval3(&to_mon, &sim)
             })
         }
@@ -308,6 +342,8 @@ pub fn specs() -> Vec<CommandSpec> {
         kind_spec!("view.proofSetup.legacyMacintoshRgb", "Legacy Macintosh RGB"),
         kind_spec!("view.proofSetup.colorBlindnessProtanopia", "Color Blindness — Protanopia-type"),
         kind_spec!("view.proofSetup.colorBlindnessDeuteranopia", "Color Blindness — Deuteranopia-type"),
+        kind_spec!("view.proofSetup.colorBlindnessTritanopia", "Color Blindness — Tritanopia-type"),
+        kind_spec!("view.proofSetup.colorBlindnessAchromatopsia", "Color Blindness — Achromatopsia"),
         CommandSpec {
             id: "view.thirtyTwoBitPreviewOptions",
             label: "32-bit Preview Options…",
@@ -357,6 +393,33 @@ mod tests {
     }
 
     #[test]
+    fn tritanopia_keeps_red_and_green_and_turns_blue_teal_and_yellow_pink() {
+        let n = dichromat_kind([0.5, 0.5, 0.5], ProofKind::Tritanopia);
+        assert!(n.iter().all(|c| (c - 0.5).abs() < 0.02), "neutrals stay neutral: {n:?}");
+        // The L and M cones are intact, so red and green stay clearly different.
+        let (r, g) = (dichromat_kind([1.0, 0.0, 0.0], ProofKind::Tritanopia), dichromat_kind([0.0, 1.0, 0.0], ProofKind::Tritanopia));
+        assert!(r[0] > r[1] + 0.3, "red stays red: {r:?}");
+        assert!(g[1] > g[0] + 0.3, "green stays green: {g:?}");
+        // Blue turns teal (it gains green and loses blue); yellow turns pink (it gains blue).
+        let b = dichromat_kind([0.0, 0.0, 1.0], ProofKind::Tritanopia);
+        assert!(b[1] > 0.1 && b[2] < 0.5, "blue: {b:?}");
+        let y = dichromat_kind([1.0, 1.0, 0.0], ProofKind::Tritanopia);
+        assert!(y[2] > 0.5, "yellow: {y:?}");
+        // Kinds that are not colour blindness leave the colour alone.
+        assert_eq!(dichromat_kind([0.1, 0.2, 0.3], ProofKind::Profile), [0.1, 0.2, 0.3]);
+    }
+
+    #[test]
+    fn achromatopsia_is_luminance_only() {
+        for c in [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.3, 0.6, 0.9]] {
+            let g = dichromat_kind(c, ProofKind::Achromatopsia);
+            assert!(g[0] == g[1] && g[1] == g[2], "{g:?}");
+            assert!((g[0] - (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2])).abs() < 1e-6);
+        }
+        assert_eq!(dichromat_kind([1.0, 1.0, 1.0], ProofKind::Achromatopsia), [1.0; 3]);
+    }
+
+    #[test]
     fn plates_and_simulations_build_luts() {
         for depth in [8, 16, 32] {
             let mut s = session("rgb", depth);
@@ -367,6 +430,8 @@ mod tests {
                 "view.proofSetup.legacyMacintoshRgb",
                 "view.proofSetup.colorBlindnessProtanopia",
                 "view.proofSetup.colorBlindnessDeuteranopia",
+                "view.proofSetup.colorBlindnessTritanopia",
+                "view.proofSetup.colorBlindnessAchromatopsia",
             ] {
                 let r = s.execute(id, json!({})).unwrap();
                 assert_eq!(r["proofColors"], true);

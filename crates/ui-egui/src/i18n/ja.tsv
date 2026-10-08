@@ -2126,3 +2126,6 @@ cameraRaw	Color	カラー
 	Set as Background	背景色に設定
 	Delete Swatch	スウォッチを削除
 	Click sets foreground · right-click for more	クリックで描画色に設定 · 右クリックでその他
+	Color Blindness — Tritanopia-type	色覚特性 — 3 型(T 型)
+	Color Blindness — Achromatopsia	色覚特性 — 全色盲
+	Or try a sample	またはサンプルを試す

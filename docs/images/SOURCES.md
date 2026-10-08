@@ -14,6 +14,10 @@
 
 Screenshots must use famous public-domain artwork (or content made in the app), never personal photos.
 
+# Web build samples
+
+`apps/pixelwright-web/samples/{great-wave,starry-night,tetons,pearl-earring}.jpg` are the same public-domain artworks as the screenshots above (Hokusai, Van Gogh, Adams, Vermeer), downloaded from the Wikimedia Commons pages linked in the first table and resized to 1500 px wide (JPEG quality 84). They are offered on the start screen of the browser build and by `?open=samples/<name>.jpg`.
+
 # Other bundled data
 
 | File | Content | Source / licence |

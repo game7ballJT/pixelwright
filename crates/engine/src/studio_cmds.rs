@@ -86,7 +86,9 @@ fn surface_from_rgba(fmt: PixelFormat, area: Rect, px: &[[f32; 4]]) -> Surface {
     let mut enc = [0.0f32; 8];
     for (p, out) in px.iter().zip(raw.chunks_exact_mut(n)) {
         let k = from_rgba_into(&fmt, *p, &mut enc).min(n);
-        out.get_mut(..k).map(|o| o.copy_from_slice(&enc[..k]));
+        if let Some(o) = out.get_mut(..k) {
+            o.copy_from_slice(&enc[..k]);
+        }
     }
     let mut surf = Surface::new(fmt);
     surf.write_region(area, &raw);
@@ -672,7 +674,7 @@ mod tests {
         assert!(tilt_degrees(&vec![0.5; 100 * 100], 100, 100, 10.0).is_none(), "no edges");
         assert!(tilt_degrees(&[], 0, 0, 10.0).is_none());
         assert!(tilt_degrees(&[0.0; 10], 100, 100, 10.0).is_none(), "wrong length");
-        assert!(tilt_degrees(&vec![0.0; 4], 2, 2, 10.0).is_none(), "too small");
+        assert!(tilt_degrees(&[0.0; 4], 2, 2, 10.0).is_none(), "too small");
         // NaN-ish limits never panic.
         let g = stripes(64, 64, 2.0, false);
         let _ = tilt_degrees(&g, 64, 64, f64::NAN);

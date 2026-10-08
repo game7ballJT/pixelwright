@@ -170,16 +170,16 @@ note = "retouch_cmds.rs:83 run_stroke always uses l.surface_mut(); no paint_targ
 [[item]]
 id = "BUG-207-2"
 target = "Sample All Layers applies to Blur, Sharpen and Smudge"
-status = "missing"
+status = "done"
 issue = 207
-note = "Checkbox at retouch_ui.rs:171-190 is not passed to the stroke commands"
+note = "retouch_cmds.rs sample_all_layers + AllLayers (each dab runs on a copy of the visible composite, laid onto the layer); tests sample_all_layers_blur_and_sharpen_work_on_an_empty_layer, sample_all_layers_smudge_drags_colour_from_below, sample_all_layers_spot_healing_heals_onto_an_empty_layer (retouch_cmds/tests.rs). Verified 2026-10-08 in the Pixelwright fork; the row was stale"
 
 [[item]]
 id = "BUG-207-3"
 target = "Smudge mixes premultiplied RGBA (no dark fringe at transparent edges)"
-status = "missing"
+status = "done"
 issue = 207
-note = "No premultiply in paint/src/retouch.rs"
+note = "paint/src/retouch.rs Smudge carries premultiplied colour (with_alpha) and mix_premultiplied; the engine passes alpha_index (retouch_cmds.rs smudge_cmd). Tests: smudge_into_transparency_leaves_no_dark_fringe (paint) and smudge_across_a_transparent_edge_has_no_dark_fringe (engine). Verified 2026-10-08; the row was stale"
 
 [[item]]
 id = "BUG-207-4"
@@ -191,9 +191,9 @@ note = "transform_cmds.rs transform() has no target handling"
 [[item]]
 id = "BUG-207-5"
 target = "Tests: per-tool mask/channel targeting, Sample All Layers, no smudge fringe"
-status = "missing"
+status = "partial"
 issue = 207
-note = "Only smudge_drags_colour_along_the_stroke (retouch.rs:407)"
+note = "Sample All Layers (blur, sharpen, smudge, spot healing, content-aware move) and the smudge fringe are tested; a mask-targeted smudge with Sample All Layers is checked. Per-tool alpha-channel and Quick Mask targeting tests are still missing"
 
 [[item]]
 id = "BUG-208-1"

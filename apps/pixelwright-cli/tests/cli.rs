@@ -48,7 +48,7 @@ fn usage_and_unknown_command() {
 #[test]
 fn every_subcommand_answers_help() {
     let d = tmp("help");
-    for sub in ["convert", "info", "run", "batch", "droplet", "commands", "mcp", "serve"] {
+    for sub in ["convert", "info", "run", "batch", "droplet", "commands", "palette", "diff", "mcp", "serve"] {
         for help in ["--help", "-h"] {
             let o = bin().current_dir(&d).arg(sub).arg(help).arg("--out").arg("x.png").stdin(Stdio::null()).output().unwrap();
             let out = String::from_utf8_lossy(&o.stdout);
@@ -545,4 +545,79 @@ fn tiff_output_is_flat_unless_tiff_layers_is_given() {
     ok(bin().arg("convert").arg(&src).arg(&kept).arg("--tiff-layers"));
     assert_eq!(layer_count(&kept), 2);
     std::fs::remove_dir_all(d).unwrap();
+}
+
+/// A 16 x 16 PNG that is `top` over the upper quarter and `bottom` below it.
+fn two_tone(path: &Path, top: [u8; 4], bottom: [u8; 4]) {
+    let mut data = Vec::new();
+    for y in 0..16u32 {
+        for _ in 0..16u32 {
+            data.extend_from_slice(if y < 4 { &top } else { &bottom });
+        }
+    }
+    let img = pixelwright_codecs::Image::from_u8(16, 16, pixelwright_codecs::ChannelLayout::Rgba, data).unwrap();
+    std::fs::write(path, pixelwright_codecs::encode(&img, pixelwright_codecs::Format::Png, &Default::default()).unwrap()).unwrap();
+}
+
+#[test]
+fn palette_lists_the_dominant_colours_in_three_formats() {
+    let d = tmp("palette");
+    let png = d.join("two.png");
+    two_tone(&png, [0, 0, 255, 255], [255, 0, 0, 255]);
+    let (out, _) = ok(bin().args(["palette"]).arg(&png).args(["--count", "4", "--format", "json"]));
+    let colors: Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(colors[0]["color"], "#FF0000", "red covers 75 %: {out}");
+    assert_eq!(colors[1]["color"], "#0000FF");
+    assert!((colors[0]["share"].as_f64().unwrap() - 0.75).abs() < 0.1);
+    let (out, _) = ok(bin().args(["palette"]).arg(&png).args(["--format", "hex"]));
+    assert_eq!(out.lines().collect::<Vec<_>>(), ["#FF0000", "#0000FF"]);
+    let (out, _) = ok(bin().args(["palette"]).arg(&png));
+    assert!(out.contains("#FF0000") && out.contains('%') && out.contains('█'), "{out}");
+    // Bad input is a clear error, not a crash.
+    for bad in [&["--count", "1"][..], &["--count", "x"], &["--sort", "random"], &["--format", "xml"]] {
+        let o = bin().args(["palette"]).arg(&png).args(bad).output().unwrap();
+        assert_eq!(o.status.code(), Some(1), "{bad:?}");
+        assert!(String::from_utf8_lossy(&o.stderr).contains("bad --"), "{bad:?}");
+    }
+    assert_eq!(bin().args(["palette", "no-such-file.png"]).output().unwrap().status.code(), Some(1));
+}
+
+#[test]
+fn diff_measures_gates_and_draws_a_heat_map() {
+    let d = tmp("diff");
+    let (a, b, c) = (d.join("a.png"), d.join("b.png"), d.join("c.png"));
+    two_tone(&a, [10, 20, 30, 255], [200, 200, 200, 255]);
+    two_tone(&b, [10, 20, 30, 255], [200, 200, 200, 255]);
+    two_tone(&c, [10, 20, 30, 255], [200, 200, 230, 255]); // the lower three quarters differ by 30 in blue
+    let (out, _) = ok(bin().arg("diff").arg(&a).arg(&b));
+    let same: Value = serde_json::from_str(&out).unwrap();
+    assert_eq!((same["differingPixels"].as_u64(), same["maxDelta"].as_u64()), (Some(0), Some(0)));
+    assert!(same["psnrDb"].is_null(), "identical images have no PSNR: {out}");
+    let heat = d.join("heat.png");
+    let (out, _) = ok(bin().arg("diff").arg(&a).arg(&c).arg("--out").arg(&heat));
+    let v: Value = serde_json::from_str(&out).unwrap();
+    assert_eq!(v["maxDelta"], 30);
+    assert_eq!(v["differingPixels"], 16 * 12);
+    assert_eq!(v["percentDifferent"], 75.0);
+    assert!(v["psnrDb"].as_f64().unwrap() > 10.0 && v["rmse"].as_f64().unwrap() > 0.0, "{out}");
+    let png = pixelwright_codecs::decode(&std::fs::read(&heat).unwrap()).unwrap();
+    assert_eq!((png.width(), png.height()), (16, 16));
+    let px = png.to_rgba8();
+    assert_eq!(&px[..4], &[0, 0, 0, 255], "equal pixels are black");
+    assert_eq!(&px[(16 * 8) * 4..(16 * 8) * 4 + 4], &[120, 0, 0, 255], "a difference of 30 shows as red 120");
+    // A threshold above the difference hides it; --fail turns a real difference into exit 1.
+    let (out, _) = ok(bin().arg("diff").arg(&a).arg(&c).args(["--threshold", "30", "--fail"]));
+    assert_eq!(serde_json::from_str::<Value>(&out).unwrap()["differingPixels"], 0);
+    let o = bin().arg("diff").arg(&a).arg(&c).arg("--fail").output().unwrap();
+    assert_eq!(o.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&o.stderr).contains("pixels differ"));
+    // Different sizes and bad flags are errors with a message.
+    let small = d.join("small.png");
+    write_png(&small, 4, 4, 5);
+    let o = bin().arg("diff").arg(&a).arg(&small).output().unwrap();
+    assert_eq!(o.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&o.stderr).contains("differ in size"));
+    let o = bin().arg("diff").arg(&a).arg(&b).args(["--threshold", "999"]).output().unwrap();
+    assert_eq!(o.status.code(), Some(1));
+    assert_eq!(bin().arg("diff").arg(&a).output().unwrap().status.code(), Some(1), "needs two files");
 }

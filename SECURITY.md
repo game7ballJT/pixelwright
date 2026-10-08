@@ -6,9 +6,11 @@ Pixelwright processes complex document and image formats and exposes CLI, JSON c
 
 Please give the repository maintainers a reasonable opportunity to investigate and coordinate a fix before publishing exploitable details, proof-of-concept code, or weaponized files.
 
-This repository does not currently document a dedicated private security email or private reporting channel. Contact the repository maintainers through the repository owner/maintainer channels already listed in the project, provide only a minimal non-exploitable summary in public, and ask for an appropriate private transfer method before sharing sensitive details. Do not open a public issue containing a working exploit, secret, sensitive crash dump, or malicious attachment.
+Use GitHub's private vulnerability reporting: open <https://github.com/game7ballJT/pixelwright/security/advisories/new> (the repository's Security tab, "Report a vulnerability"). That keeps the report private between you and the maintainer until a fix is ready. Do not open a public issue containing a working exploit, secret, sensitive crash dump, or malicious attachment.
 
-If no private channel can be established, withhold weaponized material and report the smallest safe description that allows maintainers to make contact.
+If that channel is unavailable, withhold weaponized material and open a public issue that says only that you have a security report, with no details, so the maintainer can arrange a private way to receive it.
+
+Pixelwright is a fork of PhotoCraft. A problem that also affects the upstream project (https://github.com/storytold/photocraft) is worth reporting there too.
 
 ## What to include
 

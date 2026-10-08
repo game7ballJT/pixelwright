@@ -705,6 +705,10 @@ pub struct UiState {
     /// Recently opened file paths, most-recent first (File › Open Recent). Capped; de-duplicated.
     #[serde(default)]
     pub recent_files: Vec<String>,
+    /// Commands and tools last run from the command palette, most recent first (an empty palette
+    /// query lists them first). Capped; de-duplicated.
+    #[serde(default)]
+    pub recent_commands: Vec<String>,
     /// Inline type editing session, if any.
     #[serde(default)]
     pub text_edit: Option<TextEdit>,
@@ -846,6 +850,7 @@ impl Default for UiState {
         Self {
             tool: Tool::Brush,
             recent_files: Vec::new(),
+            recent_commands: Vec::new(),
             text_edit: None,
             transform: None,
             mask_target: false,
@@ -902,7 +907,17 @@ impl Default for UiState {
     }
 }
 
+/// How many palette commands are remembered.
+pub const MAX_RECENT_COMMANDS: usize = 8;
+
 impl UiState {
+    /// Remember a command (or `tool:<Name>`) the palette ran: most recent first, no duplicates.
+    pub fn remember_command(&mut self, id: &str) {
+        self.recent_commands.retain(|c| c != id);
+        self.recent_commands.insert(0, id.to_string());
+        self.recent_commands.truncate(MAX_RECENT_COMMANDS);
+    }
+
     pub fn alloc_id(&mut self) -> u64 {
         let id = self.next_id;
         self.next_id += 1;

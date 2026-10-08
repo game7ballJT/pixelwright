@@ -6,6 +6,8 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+mod insight;
+
 use pixelwright_automation::{AuthorizedWorkspace, Headless, PixelwrightMcp, files, security};
 use pixelwright_io::ExportOptions;
 use serde_json::{Value, json};
@@ -32,6 +34,11 @@ USAGE:
       Run a droplet (File › Automate › Create Droplet) on images and folders.
   pixelwright-cli commands [--json] [--filter <text>]
       List the engine command registry.
+  pixelwright-cli palette <file> [--count <2-64>] [--sort prominence|hue|lightness] [--format text|json|hex]
+      The most prominent colours of an image or document, with their share of the pixels.
+  pixelwright-cli diff <a> <b> [--threshold <0-255>] [--out <heatmap.png>] [--fail]
+      Compare two images or documents (flattened): error metrics as JSON, a heat-map with --out.
+      --fail exits 1 when any pixel differs by more than the threshold (default 0).
   pixelwright-cli mcp [--bridge <127.0.0.1:port>] [--control-token <64-hex> | --control-token-file <path>]
       [--automation-read-root <dir>] [--automation-write-root <dir>]
       Run the MCP server on stdio (headless engine, or bridge to a running `pixelwright --control <port>`).
@@ -67,6 +74,8 @@ const SUBCOMMANDS: &[Subcommand] = &[
     Subcommand { name: "batch", values: &["--actions", "--in", "--out", "--format", "--quality"], bare: &["--in-place", "--tiff-layers"], run: batch },
     Subcommand { name: "droplet", values: &["--out"], bare: &[], run: droplet },
     Subcommand { name: "commands", values: &["--filter"], bare: &["--json"], run: |a, out, _| commands(a, out) },
+    Subcommand { name: "palette", values: &["--count", "--sort", "--format"], bare: &[], run: insight::palette },
+    Subcommand { name: "diff", values: &["--threshold", "--out"], bare: &["--fail"], run: insight::diff },
     Subcommand {
         name: "mcp",
         values: &["--bridge", "--control-token", "--control-token-file", "--automation-read-root", "--automation-write-root"],

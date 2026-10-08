@@ -30,7 +30,7 @@
     <Property Id="ARPPRODUCTICON" Value="PixelwrightIcon.exe" />
     <Property Id="ARPURLINFOABOUT" Value="https://www.jonmcgee.online/apps/pixelwright/" />
     <Property Id="ARPURLUPDATEINFO" Value="https://www.jonmcgee.online/apps/pixelwright/" />
-    <Property Id="ARPHELPLINK" Value="https://github.com/GH_OWNER/pixelwright/issues" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/game7ballJT/pixelwright/issues" />
 
     <StandardDirectory Id="ProgramFiles6432Folder">
       <Directory Id="INSTALLFOLDER" Name="Pixelwright" />

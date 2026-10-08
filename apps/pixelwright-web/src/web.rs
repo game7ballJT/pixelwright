@@ -118,9 +118,18 @@ fn param_in(query: &str, name: &str) -> Option<String> {
 /// `?open=<path>`: fetch a same-origin file (a bundled sample image) and open it, so a page can
 /// link straight to the editor with a picture already loaded.
 fn open_from_query(inbox: Inbox, ctx: egui::Context) {
-    let Some(url) = param_in(&query(), "open").filter(|u| crate::is_same_origin_path(u)) else {
+    if let Some(url) = param_in(&query(), "open") {
+        fetch_into_inbox(url, inbox, ctx);
+    }
+}
+
+/// Fetch a same-origin file and queue it for opening; anything else (another site, a scheme, a
+/// path that climbs out) is refused.
+fn fetch_into_inbox(url: String, inbox: Inbox, ctx: egui::Context) {
+    if !crate::is_same_origin_path(&url) {
+        log::warn!("refusing to open {url}: only same-origin paths are allowed");
         return;
-    };
+    }
     wasm_bindgen_futures::spawn_local(async move {
         match fetch_bytes(&url).await {
             Ok(bytes) => {
@@ -177,8 +186,18 @@ impl eframe::App for WebShell {
     }
 }
 
+/// Public-domain images bundled beside the page (`samples/`, copied by trunk), offered on the start
+/// screen. Credits: `docs/images/SOURCES.md`.
+const SAMPLES: &[(&str, &str)] = &[
+    ("The Great Wave off Kanagawa", "samples/great-wave.jpg"),
+    ("The Starry Night", "samples/starry-night.jpg"),
+    ("The Tetons and the Snake River", "samples/tetons.jpg"),
+    ("Girl with a Pearl Earring", "samples/pearl-earring.jpg"),
+];
+
 fn services(inbox: Inbox, ctx: egui::Context) -> Services {
     let open_inbox = inbox.clone();
+    let sample_ctx = ctx.clone();
     Services {
         import: Some(Box::new(|name: &str, bytes: &[u8]| pixelwright_io::import(name, bytes).map(|r| (r.document, r.warnings)).map_err(|e| e.to_string()))),
         export: Some(Box::new(|doc: &Document, path: &str, settings: &pixelwright_ui_egui::ExportSettings| {
@@ -217,7 +236,9 @@ fn services(inbox: Inbox, ctx: egui::Context) -> Services {
             let img = Image::from_u8(w, h, ChannelLayout::Rgba, rgba.to_vec()).map_err(|e| e.to_string())?;
             pixelwright_codecs::encode(&img, pixelwright_codecs::Format::Png, &EncodeOptions::default()).map_err(|e| e.to_string())
         })),
-        inbox: Some(inbox),
+        inbox: Some(inbox.clone()),
+        samples: SAMPLES.iter().map(|(label, url)| (label.to_string(), url.to_string())).collect(),
+        open_sample: Some(Box::new(move |url: &str| fetch_into_inbox(url.to_string(), inbox.clone(), sample_ctx.clone()))),
         // Preferences live in the browser's localStorage.
         load_prefs: Some(Box::new(|| local_storage()?.get_item(PREFS_KEY).ok().flatten())),
         save_prefs: Some(Box::new(|text: &str| local_storage().ok_or("no localStorage")?.set_item(PREFS_KEY, text).map_err(|e| format!("{e:?}")))),

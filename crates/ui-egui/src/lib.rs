@@ -194,6 +194,8 @@ pub type AutomationWriteFn = Box<dyn FnMut(&str, &[u8]) -> Result<(), String>>;
 /// Reject engine commands which still perform ambient filesystem I/O.
 pub type AutomationCommandFn = Box<dyn Fn(&str, &Value) -> Result<(), String>>;
 /// Open a URL in the system browser (native) — reliable cross-platform, unlike `ctx.open_url`.
+/// Starts fetching a bundled sample image (by relative URL); the bytes arrive through the inbox.
+pub type OpenSampleFn = Box<dyn FnMut(&str)>;
 pub type OpenUrlFn = Box<dyn Fn(&str) -> Result<(), String>>;
 pub type EncodePngFn = Box<dyn Fn(u32, u32, &[u8]) -> Result<Vec<u8>, String>>;
 /// Put an RGBA8 image (width, height, pixels) on the OS clipboard.
@@ -263,6 +265,11 @@ pub struct Services {
     pub open_url: Option<OpenUrlFn>,
     /// Files delivered asynchronously (web file pickers, drag-and-drop): drained every frame.
     pub inbox: Option<Inbox>,
+    /// Bundled sample images the start screen offers: (label, relative URL). The browser build
+    /// sets them; they arrive through [`Services::inbox`] after `open_sample` fetches one.
+    pub samples: Vec<(String, String)>,
+    /// Fetch a bundled sample by URL and queue it for opening (the browser build).
+    pub open_sample: Option<OpenSampleFn>,
     /// OS clipboard images: copies go out, screenshots and images from other apps come in.
     pub clipboard_set_image: Option<ClipboardSetFn>,
     pub clipboard_get_image: Option<ClipboardGetFn>,

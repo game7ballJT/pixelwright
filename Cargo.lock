@@ -3573,6 +3573,7 @@ version = "0.5.0"
 dependencies = [
  "pixelwright-automation",
  "pixelwright-codecs",
+ "pixelwright-compose",
  "pixelwright-engine",
  "pixelwright-format",
  "pixelwright-io",
