@@ -42,7 +42,7 @@ Three programs come out of this repository:
 ## Try it now
 
 The live preview is the real program compiled to WebAssembly, running entirely in your browser tab:
-**<https://www.jonmcgee.online/apps/pixelwright/>**. It needs WebGPU or WebGL2, downloads about 19 MB once, and starts with a few public-domain images you can open from the start screen (or drop in your own files, including PSDs; nothing is uploaded anywhere).
+**<https://www.jonmcgee.online/apps/pixelwright/>**. It needs WebGPU or WebGL2, downloads about 9 MB (22 MB unpacked) once, and starts with a few public-domain images you can open from the start screen (or drop in your own files, including PSDs; nothing is uploaded anywhere).
 
 ## What you get
 
