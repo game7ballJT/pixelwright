@@ -639,13 +639,21 @@ pub fn straighten_angle(r: &Ruler) -> f64 {
 fn straighten(s: &mut Session, p: &Value) -> Result<Value> {
     let d = doc(s)?;
     let r = d.measurement.ruler.ok_or_else(|| EngineError::Other("no ruler line".into()))?;
-    let rot = straighten_angle(&r);
-    if rot.abs() < 1e-9 {
+    straighten_by(s, straighten_angle(&r), p.get("crop").and_then(Value::as_bool))
+}
+
+/// Turn the whole image `rot` degrees clockwise as one history step: rotated and cropped to the
+/// largest upright rectangle when `crop` is true (the default for a flattened image, one whose
+/// active layer is the Background), otherwise as a transform of the active layer. Shared by the
+/// Ruler straighten and `image.autoStraighten`.
+pub(crate) fn straighten_by(s: &mut Session, rot: f64, crop: Option<bool>) -> Result<Value> {
+    let d = doc(s)?;
+    if !rot.is_finite() || rot.abs() < 1e-9 {
         return Ok(json!({"angle": 0.0}));
     }
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let active_bg = st.active_layer.and_then(|id| d.layer(id)).is_some_and(|l| l.name == "Background" && l.locks.position);
-    let crop = p.get("crop").and_then(Value::as_bool).unwrap_or(active_bg || st.active_layer.is_none());
+    let crop = crop.unwrap_or(active_bg || st.active_layer.is_none());
     let (w0, h0) = (f64::from(d.size.width), f64::from(d.size.height));
     compound(s, "Straighten", |s| {
         if crop {

@@ -62,7 +62,7 @@ fn step_key(s: &Session, what: &str) -> String {
 /// Rewrite the active pixel layer's RGBA over the selection bounds (or the canvas). `f` gets the
 /// area, the pixels, and the selection coverage per pixel; results are blended back by coverage,
 /// and transparency stays locked when the layer locks it.
-fn map_pixels(s: &mut Session, label: &str, f: impl FnOnce(Rect, &mut [[f32; 4]], &[f32])) -> Result<Value> {
+pub(crate) fn map_pixels(s: &mut Session, label: &str, f: impl FnOnce(Rect, &mut [[f32; 4]], &[f32])) -> Result<Value> {
     let id = layer_param(s, &Value::Null)?;
     s.edit(label, |doc, _| {
         let canvas = doc.bounds();

@@ -1033,6 +1033,7 @@ fn build() -> Vec<CommandSpec> {
     v.extend(crate::fill_key_cmds::specs());
     v.extend(crate::brush_key_cmds::specs());
     v.extend(crate::stamp_cmds::specs());
+    v.extend(crate::studio_cmds::specs());
     v.extend(crate::align_cmds::specs());
     v.extend(crate::photo_cmds::specs());
     v.extend(crate::lens_cmds::specs());

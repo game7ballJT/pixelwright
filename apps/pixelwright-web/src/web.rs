@@ -14,7 +14,7 @@ type Inbox = Arc<Mutex<Vec<(String, Vec<u8>)>>>;
 /// Everything File › Open reads: Pixelwright and Photoshop documents, flat images, and Photoshop
 /// brushes (.abr) and gradients (.grd), which go to the preset libraries.
 const OPEN_EXTS: &[&str] = &[
-    "pxwr", "psd", "psb", "psdt", "png", "jpg", "jpeg", "tif", "tiff", "webp", "gif", "bmp", "tga", "ico", "qoi", "exr", "hdr", "pbm", "pgm", "ppm", "pam",
+    "pxwr", "pcraft", "psd", "psb", "psdt", "png", "jpg", "jpeg", "tif", "tiff", "webp", "gif", "bmp", "tga", "ico", "qoi", "exr", "hdr", "pbm", "pgm", "ppm", "pam",
     "pfm", "heic", "heif", "hif", "dng", "cr2", "cr3", "nef", "nrw", "arw", "pef", "orf", "rw2", "raf", "abr", "grd",
 ];
 const CANVAS_ID: &str = "pixelwright_canvas";
@@ -47,6 +47,7 @@ pub fn start() {
                 Box::new(move |cc| {
                     PixelwrightApp::setup_context(&cc.egui_ctx, ThemeKind::Pro);
                     let inbox: Inbox = Arc::default();
+                    open_from_query(inbox.clone(), cc.egui_ctx.clone());
                     let mut app = PixelwrightApp::new(Session::new(), services(inbox.clone(), cc.egui_ctx.clone()));
                     listen_pen(&pen_target, app.stylus.feed.clone());
                     app.set_theme(&cc.egui_ctx, ThemeKind::Pro);
@@ -101,6 +102,47 @@ fn listen_pen(target: &web_sys::HtmlCanvasElement, feed: pixelwright_ui_egui::st
 
 fn query() -> String {
     web_sys::window().and_then(|w| w.location().search().ok()).unwrap_or_default()
+}
+
+/// The decoded value of `name` in a `?a=b&c=d` query string.
+fn param_in(query: &str, name: &str) -> Option<String> {
+    query.trim_start_matches('?').split('&').find_map(|pair| {
+        let (k, v) = pair.split_once('=')?;
+        if k != name {
+            return None;
+        }
+        js_sys::decode_uri_component(v).ok().and_then(|s| s.as_string())
+    })
+}
+
+/// `?open=<path>`: fetch a same-origin file (a bundled sample image) and open it, so a page can
+/// link straight to the editor with a picture already loaded.
+fn open_from_query(inbox: Inbox, ctx: egui::Context) {
+    let Some(url) = param_in(&query(), "open").filter(|u| crate::is_same_origin_path(u)) else {
+        return;
+    };
+    wasm_bindgen_futures::spawn_local(async move {
+        match fetch_bytes(&url).await {
+            Ok(bytes) => {
+                let name = url.rsplit('/').next().unwrap_or("sample").to_string();
+                inbox.lock().unwrap_or_else(|e| e.into_inner()).push((name, bytes));
+                ctx.request_repaint();
+            }
+            Err(e) => log::error!("couldn't open {url}: {e}"),
+        }
+    });
+}
+
+async fn fetch_bytes(url: &str) -> Result<Vec<u8>, String> {
+    let js = |e: wasm_bindgen::JsValue| format!("{e:?}");
+    let window = web_sys::window().ok_or("no window")?;
+    let response: web_sys::Response =
+        wasm_bindgen_futures::JsFuture::from(window.fetch_with_str(url)).await.map_err(js)?.dyn_into().map_err(|_| "not a response")?;
+    if !response.ok() {
+        return Err(format!("HTTP {}", response.status()));
+    }
+    let buffer = wasm_bindgen_futures::JsFuture::from(response.array_buffer().map_err(js)?).await.map_err(js)?;
+    Ok(js_sys::Uint8Array::new(&buffer).to_vec())
 }
 
 /// Wraps the app to read dropped files asynchronously (browsers can't read them synchronously,
