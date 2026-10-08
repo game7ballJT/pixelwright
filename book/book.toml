@@ -1,9 +1,9 @@
-[book]
-authors = ["PhotoCraft contributors"]
+﻿[book]
+authors = ["PhotoCraft contributors", "Jon McGee"]
 language = "en"
 multilingual = false
 src = "src"
-title = "PhotoCraft Documentation"
+title = "Pixelwright Documentation"
 
 [build]
 build-dir = "output"

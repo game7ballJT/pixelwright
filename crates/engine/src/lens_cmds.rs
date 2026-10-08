@@ -3,18 +3,18 @@
 //!
 //! The three filters act on the active pixel layer (inside the selection) or, on a smart
 //! object, record a smart filter whose params are fully resolved (EXIF-derived values are
-//! written into them), so re-rendering is deterministic. Algorithms: [`photocraft_algo::lens`],
-//! [`photocraft_algo::wideangle`], [`photocraft_algo::camera_raw`].
+//! written into them), so re-rendering is deterministic. Algorithms: [`pixelwright_algo::lens`],
+//! [`pixelwright_algo::wideangle`], [`pixelwright_algo::camera_raw`].
 
-use photocraft_algo::camera_raw::{self, CameraRaw};
-use photocraft_algo::exif;
-use photocraft_algo::lens::{self, EdgeMode, LensCorrection};
-use photocraft_algo::transform::Interp;
-use photocraft_algo::wideangle::{self, WideAngle};
-use photocraft_color::{ColorMode, SampleType};
-use photocraft_doc::{Document, LayerContent, LayerId, SmartFilter};
-use photocraft_geom::Rect;
-use photocraft_raster::{Surface, from_rgba_into};
+use pixelwright_algo::camera_raw::{self, CameraRaw};
+use pixelwright_algo::exif;
+use pixelwright_algo::lens::{self, EdgeMode, LensCorrection};
+use pixelwright_algo::transform::Interp;
+use pixelwright_algo::wideangle::{self, WideAngle};
+use pixelwright_color::{ColorMode, SampleType};
+use pixelwright_doc::{Document, LayerContent, LayerId, SmartFilter};
+use pixelwright_geom::Rect;
+use pixelwright_raster::{Surface, from_rgba_into};
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;
@@ -274,7 +274,7 @@ fn run_filter(s: &mut Session, cmd: &str, label: &str, stored: Value, float_bg: 
         let locks = doc.effective_locks(id);
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         if let LayerContent::Smart(_) = l.content {
-            let sf = SmartFilter { command: cmd.to_string(), params: stored.clone(), blend: photocraft_color::BlendMode::Normal, opacity: 1.0, visible: true };
+            let sf = SmartFilter { command: cmd.to_string(), params: stored.clone(), blend: pixelwright_color::BlendMode::Normal, opacity: 1.0, visible: true };
             return crate::smart_cmds::add_smart_filter(doc, id, sf, selection.as_ref());
         }
         if locks.all || locks.pixels {
@@ -327,7 +327,7 @@ fn adaptive_wide_angle(s: &mut Session, p: &Value) -> Result<Value> {
     let id = run_filter(s, WIDE, "Adaptive Wide Angle", stored.clone(), true, &|surf, canvas| {
         let tris = mesh.triangles();
         if canvas == frame {
-            photocraft_algo::warp::warp_triangles(surf, canvas, &mesh.verts, &tris, interp)
+            pixelwright_algo::warp::warp_triangles(surf, canvas, &mesh.verts, &tris, interp)
         } else {
             wideangle::apply(surf, canvas, &wa, interp)
         }
@@ -445,7 +445,7 @@ mod tests {
             for y in 0..80 {
                 for x in 0..120 {
                     let v = if x % 12 < 2 || y % 12 < 2 { 0.9 } else { 0.35 };
-                    surf.write_pixel(x, y, &photocraft_raster::from_rgba(&fmt, [v, v * 0.9, v * 0.7, 1.0]));
+                    surf.write_pixel(x, y, &pixelwright_raster::from_rgba(&fmt, [v, v * 0.9, v * 0.7, 1.0]));
                 }
             }
             Ok(())

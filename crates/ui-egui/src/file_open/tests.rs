@@ -1,8 +1,8 @@
 use super::*;
 use crate::{Services, menus, notices};
-use photocraft_color::{ColorMode, SampleType};
-use photocraft_doc::Document;
-use photocraft_geom::Size;
+use pixelwright_color::{ColorMode, SampleType};
+use pixelwright_doc::Document;
+use pixelwright_geom::Size;
 use serde_json::json;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -10,10 +10,10 @@ use std::rc::Rc;
 /// Writes recorded by the fake writer: (path, bytes).
 type Written = Rc<RefCell<Vec<(String, Vec<u8>)>>>;
 
-/// An app whose importer names the document after the file (like `photocraft-io`) and reports a
+/// An app whose importer names the document after the file (like `pixelwright-io`) and reports a
 /// warning for names containing "warn", and fails for bytes "bad"; the exporter warns for ".png"
 /// and the writer records what it wrote.
-fn app_with(pick_open: Option<(String, Vec<u8>)>, pick_save: Option<String>) -> (PhotocraftApp, Written) {
+fn app_with(pick_open: Option<(String, Vec<u8>)>, pick_save: Option<String>) -> (PixelwrightApp, Written) {
     let written: Written = Rc::default();
     let w = written.clone();
     let mut pick_open = pick_open;
@@ -37,7 +37,7 @@ fn app_with(pick_open: Option<(String, Vec<u8>)>, pick_save: Option<String>) -> 
         })),
         ..Default::default()
     };
-    (PhotocraftApp::new(photocraft_engine::Session::new(), services), written)
+    (PixelwrightApp::new(pixelwright_engine::Session::new(), services), written)
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn file_open_dialog_sets_path_so_save_writes_in_place() {
 
 #[test]
 fn file_open_dialog_opens_every_selected_path() {
-    let dir = std::env::temp_dir().join(format!("photocraft-issue-595-open-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pixelwright-issue-595-open-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let paths = ["one.psd", "two.png"].map(|name| {
         let path = dir.join(name);
@@ -112,12 +112,12 @@ fn cancelling_multi_file_open_does_not_fall_back_to_single_file_picker() {
 }
 
 #[test]
-fn pcraft_documents_save_in_place_but_flat_files_ask() {
+fn pxwr_documents_save_in_place_but_flat_files_ask() {
     let (mut app, written) = app_with(None, None);
     let ctx = egui::Context::default();
-    app.open_file("/pics/work.pcraft", b"x").unwrap();
+    app.open_file("/pics/work.pxwr", b"x").unwrap();
     let r = menus::invoke(&mut app, &ctx, "file.save", json!({})).unwrap();
-    assert_eq!(r["path"], "/pics/work.pcraft");
+    assert_eq!(r["path"], "/pics/work.pxwr");
     assert_eq!(written.borrow().len(), 1);
     // A PNG goes through Save As (cancelled here), not silently flattened over the original.
     app.open_file("/pics/flat.png", b"x").unwrap();
@@ -149,7 +149,7 @@ fn templates_open_as_new_untitled_documents() {
 
 #[test]
 fn import_warnings_reach_status_notice_and_control_response() {
-    let dir = std::env::temp_dir().join(format!("photocraft-open-warn-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pixelwright-open-warn-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("warn.psd");
     std::fs::write(&path, b"x").unwrap();
@@ -216,7 +216,7 @@ fn a_picked_file_that_cannot_be_read_is_reported_like_any_open_failure() {
 #[test]
 fn open_paths_reports_each_failure_without_panicking() {
     let (mut app, _) = app_with(None, None);
-    let missing = std::env::temp_dir().join("photocraft-definitely-missing-file.psd").to_string_lossy().to_string();
+    let missing = std::env::temp_dir().join("pixelwright-definitely-missing-file.psd").to_string_lossy().to_string();
     let dir = std::env::temp_dir().to_string_lossy().to_string();
     let n = app.open_paths(&[missing, String::new(), dir, "\u{0}".into()]);
     assert_eq!(n, 0);
@@ -230,7 +230,7 @@ fn open_paths_reports_each_failure_without_panicking() {
 
 #[test]
 fn os_open_events_open_files_with_paths() {
-    let dir = std::env::temp_dir().join(format!("photocraft-os-open-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pixelwright-os-open-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let a = dir.join("a.psd");
     let b = dir.join("b.png");
@@ -277,14 +277,14 @@ fn dropped(path: impl Into<std::path::PathBuf>, bytes: Result<Vec<u8>, String>) 
     std::sync::Arc::new(FakeDrop(path.into(), bytes))
 }
 
-fn doc_names(app: &PhotocraftApp) -> Vec<String> {
+fn doc_names(app: &PixelwrightApp) -> Vec<String> {
     app.session.documents().iter().map(|d| d.doc.name.clone()).collect()
 }
 
 #[test]
 fn dropped_files_open_with_path_and_recent() {
     let (mut app, _) = app_with(None, None);
-    let dir = std::env::temp_dir().join(format!("photocraft-drop-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pixelwright-drop-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let abs = dir.join("dropped.psd");
     std::fs::write(&abs, b"x").unwrap();
@@ -315,24 +315,24 @@ fn dropped_files_open_with_path_and_recent() {
 
 /// PNG bytes of a white `w`×`h` image.
 fn png_bytes(w: u32, h: u32) -> Vec<u8> {
-    let mut s = photocraft_engine::Session::new();
+    let mut s = pixelwright_engine::Session::new();
     s.execute("file.new", json!({"width": w, "height": h, "background": "white"})).unwrap();
-    photocraft_io::export(&s.active().unwrap().doc, "p.png", &Default::default()).unwrap().bytes
+    pixelwright_io::export(&s.active().unwrap().doc, "p.png", &Default::default()).unwrap().bytes
 }
 
 /// An app with one open document whose canvas showed at (100, 50)–(700, 550) last frame.
-fn app_with_canvas() -> PhotocraftApp {
+fn app_with_canvas() -> PixelwrightApp {
     let (mut app, _) = app_with(None, None);
     app.open_bytes("canvas.psd", b"x").unwrap();
     app.drop_canvas_rect = Some(egui::Rect::from_min_max(egui::pos2(100.0, 50.0), egui::pos2(700.0, 550.0)));
     app
 }
 
-fn layer_count(app: &PhotocraftApp) -> usize {
+fn layer_count(app: &PixelwrightApp) -> usize {
     app.session.active().unwrap().doc.layers.len()
 }
 
-fn history_steps(app: &PhotocraftApp) -> usize {
+fn history_steps(app: &PixelwrightApp) -> usize {
     app.session.active().unwrap().history.past_len()
 }
 
@@ -340,7 +340,7 @@ fn history_steps(app: &PhotocraftApp) -> usize {
 /// Transform; the next is placed once the previous transform is committed or cancelled.
 #[test]
 fn files_dropped_onto_the_canvas_are_placed_in_free_transform_one_by_one() {
-    let dir = std::env::temp_dir().join(format!("photocraft-drop-place-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pixelwright-drop-place-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let abs = dir.join("photo.png");
     std::fs::write(&abs, png_bytes(200, 100)).unwrap();
@@ -377,7 +377,7 @@ fn files_dropped_onto_the_canvas_are_placed_in_free_transform_one_by_one() {
     let st = app.session.active().unwrap();
     let top = st.doc.layer(st.active_layer.unwrap()).unwrap();
     assert_eq!(top.name, "small");
-    assert!(matches!(top.content, photocraft_doc::LayerContent::Smart(_)));
+    assert!(matches!(top.content, pixelwright_doc::LayerContent::Smart(_)));
     // Esc takes the place back, leaving nothing to redo.
     crate::transform_tool::cancel(&mut app);
     assert_eq!((layer_count(&app), history_steps(&app)), (layers + 1, steps + 1));
@@ -434,20 +434,20 @@ fn files_dropped_on_the_tabs_open_at_that_slot() {
 /// service picks a slot; files dropped there open (in the background) at it; dropped on the canvas they're placed in Free Transform, and Esc takes the place back.
 #[test]
 fn drag_and_drop_in_the_running_app() {
-    let dir = std::env::temp_dir().join(format!("photocraft-drop-app-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pixelwright-drop-app-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let file = dir.join("photo.png");
     std::fs::write(&file, png_bytes(40, 30)).unwrap();
     let pointer = Rc::new(std::cell::Cell::new(egui::Pos2::ZERO));
     let reported = pointer.clone();
     let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1280.0, 800.0)).with_max_steps(8).build_eframe(move |cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        let mut s = photocraft_engine::Session::new();
+        PixelwrightApp::setup_context(&cc.egui_ctx, Default::default());
+        let mut s = pixelwright_engine::Session::new();
         for _ in 0..2 {
             s.execute("file.new", json!({"width": 320, "height": 240, "background": "white"})).unwrap();
         }
         let services = Services { cursor_pos: Some(Box::new(move |_: &egui::Context| Some(reported.get()))), ..Default::default() };
-        let mut app = PhotocraftApp::new(s, services);
+        let mut app = PixelwrightApp::new(s, services);
         app.background_jobs = true;
         app
     });
@@ -498,8 +498,8 @@ fn views_and_windows_stay_with_their_documents() {
         v.zoom = i as f32 + 1.0;
     }
     app.ui.windows = (0..4).map(|document| crate::state::DocWindow { id: document as u64, document, view: Default::default(), open: true }).collect();
-    let zooms = |app: &PhotocraftApp| app.ui.views.iter().map(|v| v.zoom).collect::<Vec<_>>();
-    let windows = |app: &PhotocraftApp| app.ui.windows.iter().map(|w| (w.id, w.document)).collect::<Vec<_>>();
+    let zooms = |app: &PixelwrightApp| app.ui.views.iter().map(|v| v.zoom).collect::<Vec<_>>();
+    let windows = |app: &PixelwrightApp| app.ui.windows.iter().map(|w| (w.id, w.document)).collect::<Vec<_>>();
     assert_eq!(app.run("document.move", json!({"document": 0, "to": 3})).unwrap(), json!({"document": 3}));
     assert_eq!(doc_names(&app), ["b.psd", "c.psd", "d.psd", "a.psd"]);
     assert_eq!(zooms(&app), [2.0, 3.0, 4.0, 1.0]);

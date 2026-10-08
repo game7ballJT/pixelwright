@@ -13,21 +13,21 @@
 //!              ──filter mask mix (unfiltered ↔ filtered)───────► cache
 //! ```
 //!
-//! Converting a layer embeds it as an in-memory `.pcraft` bundle of a nested document (exactly
+//! Converting a layer embeds it as an in-memory `.pxwr` bundle of a nested document (exactly
 //! lossless, layered, any depth/model). PSD placed layers keep their source in the preserved
 //! global `lnk2` block (found by uuid), and keep Photoshop's rendering until something changes,
-//! so an unedited PSD still round-trips byte for byte. PSD export (`photocraft_io::smart_map`)
-//! writes every smart object back as one: its source embedded in `lnk2` (a `.pcraft` source as a
+//! so an unedited PSD still round-trips byte for byte. PSD export (`pixelwright_io::smart_map`)
+//! writes every smart object back as one: its source embedded in `lnk2` (a `.pxwr` source as a
 //! PSB), its smart filters in `filterFX` and its filter mask in `FEid`.
 
 use std::sync::{Arc, Mutex};
 
-use photocraft_algo::resample::translate_surface;
-use photocraft_algo::transform::Homography;
-use photocraft_color::{BlendMode, PixelFormat};
-use photocraft_doc::{DocId, Document, Layer, LayerContent, LayerId, LayerMask, Metadata, SmartObject, SmartSource};
-use photocraft_geom::{Affine, Rect, Size};
-use photocraft_raster::Surface;
+use pixelwright_algo::resample::translate_surface;
+use pixelwright_algo::transform::Homography;
+use pixelwright_color::{BlendMode, PixelFormat};
+use pixelwright_doc::{DocId, Document, Layer, LayerContent, LayerId, LayerMask, Metadata, SmartObject, SmartSource};
+use pixelwright_geom::{Affine, Rect, Size};
+use pixelwright_raster::Surface;
 use serde_json::{Value, json};
 
 use crate::commands::{CommandSpec, blend_from_str, layer_param};
@@ -44,8 +44,8 @@ pub struct SmartLink {
 /// PSD placed-layer keys that describe the smart object's source; stale once we change it.
 const PLACED_KEYS: [&[u8; 4]; 3] = [b"SoLd", b"PlLd", b"SoLE"];
 
-/// Command id of a Photoshop smart filter PhotoCraft does not implement (kept verbatim from PSD).
-pub use photocraft_io::smart_map::UNSUPPORTED_FILTER;
+/// Command id of a Photoshop smart filter Pixelwright does not implement (kept verbatim from PSD).
+pub use pixelwright_io::smart_map::UNSUPPORTED_FILTER;
 
 fn other(msg: impl Into<String>) -> EngineError {
     EngineError::Other(msg.into())
@@ -57,14 +57,14 @@ fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
 
 // ---------- source encoding / decoding ----------
 
-/// Encodes a document as embedded smart-object contents: an in-memory `.pcraft` bundle.
+/// Encodes a document as embedded smart-object contents: an in-memory `.pxwr` bundle.
 pub fn encode_source(doc: &Document) -> Result<Vec<u8>> {
-    photocraft_format::save_to_bytes(doc, &Default::default()).map_err(|e| other(format!("can't encode smart object contents: {e}")))
+    pixelwright_format::save_to_bytes(doc, &Default::default()).map_err(|e| other(format!("can't encode smart object contents: {e}")))
 }
 
-/// Decodes smart-object contents (a `.pcraft` bundle, PSD/PSB, or any flat image format).
+/// Decodes smart-object contents (a `.pxwr` bundle, PSD/PSB, or any flat image format).
 pub fn decode_source(file_name: &str, bytes: &[u8]) -> Result<Document> {
-    photocraft_io::import(file_name, bytes).map(|r| r.document).map_err(|e| other(format!("can't read smart object contents \"{file_name}\": {e}")))
+    pixelwright_io::import(file_name, bytes).map(|r| r.document).map_err(|e| other(format!("can't read smart object contents \"{file_name}\": {e}")))
 }
 
 fn base_name(path: &str) -> String {
@@ -72,7 +72,7 @@ fn base_name(path: &str) -> String {
 }
 
 fn read_file(path: &str) -> Option<Vec<u8>> {
-    if path.is_empty() { None } else { photocraft_format::read_file(std::path::Path::new(path)).ok() }
+    if path.is_empty() { None } else { pixelwright_format::read_file(std::path::Path::new(path)).ok() }
 }
 
 /// The source file of a smart object: embedded bytes, the PSD's embedded linked-layer data (PSD
@@ -81,7 +81,7 @@ pub fn source_bytes(meta: &Metadata, src: &SmartSource) -> Option<(String, Arc<V
     match src {
         SmartSource::Embedded { file_name, bytes } => Some((file_name.clone(), bytes.clone())),
         SmartSource::Linked { path } => {
-            if let Some(f) = photocraft_io::linked::find_linked_file(meta, path) {
+            if let Some(f) = pixelwright_io::linked::find_linked_file(meta, path) {
                 return Some((f.file_name, Arc::new(f.bytes)));
             }
             read_file(path).map(|b| (base_name(path), Arc::new(b)))
@@ -142,11 +142,11 @@ pub fn source_decode_count(bytes: &[u8], fmt: PixelFormat) -> u32 {
     SOURCE_CACHE.lock().ok().and_then(|c| c.iter().find(|e| e.key == key).map(|e| e.decodes)).unwrap_or(0)
 }
 
-fn buffer_to_surface(buf: &photocraft_compose::Buffer, fmt: PixelFormat) -> Surface {
+fn buffer_to_surface(buf: &pixelwright_compose::Buffer, fmt: PixelFormat) -> Surface {
     let n = fmt.channels();
     let mut data = vec![0.0f32; buf.px.len() * n];
     for (p, out) in buf.px.iter().zip(data.chunks_exact_mut(n)) {
-        photocraft_raster::from_rgba_into(&fmt, *p, out);
+        pixelwright_raster::from_rgba_into(&fmt, *p, out);
     }
     let mut s = Surface::new(fmt);
     if !buf.rect.is_empty() {
@@ -163,7 +163,7 @@ pub fn source_image(file_name: &str, bytes: &[u8], fmt: PixelFormat) -> Result<S
         return Ok(img);
     }
     let doc = decode_source(file_name, bytes)?;
-    let buf = photocraft_compose::flatten(&doc);
+    let buf = pixelwright_compose::flatten(&doc);
     let img = SourceImage { surface: Arc::new(buffer_to_surface(&buf, fmt)), bounds: doc.bounds() };
     cache_put(key, img.clone());
     Ok(img)
@@ -171,8 +171,8 @@ pub fn source_image(file_name: &str, bytes: &[u8], fmt: PixelFormat) -> Result<S
 
 /// Layer › Smart Objects › Stack Mode: the source's layers (or, when it holds a single group, the
 /// group's layers) combined per pixel with `mode`. Cached like [`source_image`], keyed by mode.
-pub fn stack_image(file_name: &str, bytes: &[u8], fmt: PixelFormat, mode: photocraft_doc::StackMode) -> Result<SourceImage> {
-    use photocraft_algo::stack::Stat;
+pub fn stack_image(file_name: &str, bytes: &[u8], fmt: PixelFormat, mode: pixelwright_doc::StackMode) -> Result<SourceImage> {
+    use pixelwright_algo::stack::Stat;
     let mut key = cache_key(bytes, fmt);
     key.0 = *blake3::hash(&[&key.0[..], b"stack:", mode.id().as_bytes()].concat()).as_bytes();
     if let Some(img) = cache_get(&key) {
@@ -191,26 +191,26 @@ pub fn stack_image(file_name: &str, bytes: &[u8], fmt: PixelFormat, mode: photoc
             let mut one = l.clone();
             one.blend = BlendMode::Normal;
             one.clipped = false;
-            photocraft_compose::render_layer(&one, bounds).px
+            pixelwright_compose::render_layer(&one, bounds).px
         })
         .collect();
     if frames.is_empty() {
         return Err(EngineError::Other("the smart object's contents have no visible layers".into()));
     }
     let stat = match mode {
-        photocraft_doc::StackMode::Entropy => Stat::Entropy,
-        photocraft_doc::StackMode::Kurtosis => Stat::Kurtosis,
-        photocraft_doc::StackMode::Maximum => Stat::Maximum,
-        photocraft_doc::StackMode::Mean => Stat::Mean,
-        photocraft_doc::StackMode::Median => Stat::Median,
-        photocraft_doc::StackMode::Minimum => Stat::Minimum,
-        photocraft_doc::StackMode::Range => Stat::Range,
-        photocraft_doc::StackMode::Skewness => Stat::Skewness,
-        photocraft_doc::StackMode::StandardDeviation => Stat::StandardDeviation,
-        photocraft_doc::StackMode::Summation => Stat::Summation,
-        photocraft_doc::StackMode::Variance => Stat::Variance,
+        pixelwright_doc::StackMode::Entropy => Stat::Entropy,
+        pixelwright_doc::StackMode::Kurtosis => Stat::Kurtosis,
+        pixelwright_doc::StackMode::Maximum => Stat::Maximum,
+        pixelwright_doc::StackMode::Mean => Stat::Mean,
+        pixelwright_doc::StackMode::Median => Stat::Median,
+        pixelwright_doc::StackMode::Minimum => Stat::Minimum,
+        pixelwright_doc::StackMode::Range => Stat::Range,
+        pixelwright_doc::StackMode::Skewness => Stat::Skewness,
+        pixelwright_doc::StackMode::StandardDeviation => Stat::StandardDeviation,
+        pixelwright_doc::StackMode::Summation => Stat::Summation,
+        pixelwright_doc::StackMode::Variance => Stat::Variance,
     };
-    let buf = photocraft_compose::Buffer { rect: bounds, px: photocraft_algo::stack::combine(&frames, stat) };
+    let buf = pixelwright_compose::Buffer { rect: bounds, px: pixelwright_algo::stack::combine(&frames, stat) };
     let img = SourceImage { surface: Arc::new(buffer_to_surface(&buf, fmt)), bounds };
     cache_put(key, img.clone());
     Ok(img)
@@ -230,8 +230,8 @@ fn blend_surfaces(base: &Surface, top: &Surface, mode: BlendMode, opacity: f32) 
     let (b, t) = (base.read_region(area), top.read_region(area));
     let mut o = vec![0.0f32; b.len()];
     for ((bp, tp), op) in b.chunks_exact(n).zip(t.chunks_exact(n)).zip(o.chunks_exact_mut(n)) {
-        let rgba = photocraft_color::blend::composite(mode, photocraft_raster::to_rgba(&fmt, bp), photocraft_raster::to_rgba(&fmt, tp), opacity);
-        photocraft_raster::from_rgba_into(&fmt, rgba, op);
+        let rgba = pixelwright_color::blend::composite(mode, pixelwright_raster::to_rgba(&fmt, bp), pixelwright_raster::to_rgba(&fmt, tp), opacity);
+        pixelwright_raster::from_rgba_into(&fmt, rgba, op);
     }
     out.write_region(area, &o);
     out.prune();
@@ -301,8 +301,8 @@ pub fn render(doc: &Document, sm: &SmartObject) -> Result<Option<Surface>> {
     };
     // Through the warp (source space) and the transform in one pass; whole-pixel moves are exact.
     let placed = match &sm.perspective {
-        Some(p) => photocraft_algo::warp::place_source_projective(&img.surface, img.bounds, &Homography(*p), sm.warp.as_ref()),
-        None => photocraft_algo::warp::place_source(&img.surface, img.bounds, &sm.transform, sm.warp.as_ref()),
+        Some(p) => pixelwright_algo::warp::place_source_projective(&img.surface, img.bounds, &Homography(*p), sm.warp.as_ref()),
+        None => pixelwright_algo::warp::place_source(&img.surface, img.bounds, &sm.transform, sm.warp.as_ref()),
     };
     Ok(Some(apply_smart_filters(&placed, sm, doc.bounds())))
 }
@@ -368,7 +368,7 @@ fn mask_from_selection(sel: &Surface) -> LayerMask {
 /// Appends a smart filter (from a `filter.*` command) and re-renders. A selection becomes the
 /// filter mask, as in Photoshop. Without a renderable source the filter is applied to the cached
 /// pixels (and still recorded).
-pub(crate) fn add_smart_filter(doc: &mut Document, id: LayerId, sf: photocraft_doc::SmartFilter, selection: Option<&Surface>) -> Result<()> {
+pub(crate) fn add_smart_filter(doc: &mut Document, id: LayerId, sf: pixelwright_doc::SmartFilter, selection: Option<&Surface>) -> Result<()> {
     let canvas = doc.bounds();
     let renderable = source_bytes(&doc.metadata, &smart(doc, id)?.source).is_some();
     let sm = smart_mut(doc, id)?;
@@ -520,7 +520,7 @@ pub fn layer_to_smart(doc: &Document, l: &Layer) -> Result<Layer> {
     if background {
         inner.name = "Layer 0".into();
     }
-    let mut sub = Document::new(format!("{}.pcraft", l.name), doc.size, doc.mode, doc.depth);
+    let mut sub = Document::new(format!("{}.pxwr", l.name), doc.size, doc.mode, doc.depth);
     sub.resolution_dpi = doc.resolution_dpi;
     sub.icc_profile = doc.icc_profile.clone();
     sub.global_light = doc.global_light;
@@ -532,7 +532,7 @@ pub fn layer_to_smart(doc: &Document, l: &Layer) -> Result<Layer> {
 
     let has_fx = any_layer(l, &|x| x.effects.enabled && !x.effects.items.is_empty());
     let region = subtree_bounds(l, canvas).union(&canvas).inflate(if has_fx { 256 } else { 0 });
-    let buf = photocraft_compose::render(&sub, region);
+    let buf = pixelwright_compose::render(&sub, region);
     let w = region.width() as usize;
     let mut b = Rect::EMPTY;
     for (i, p) in buf.px.iter().enumerate() {
@@ -546,7 +546,7 @@ pub fn layer_to_smart(doc: &Document, l: &Layer) -> Result<Layer> {
     }
     let fmt = doc.pixel_format();
     let mut cache = buffer_to_surface(&buf, fmt);
-    cache = photocraft_algo::resample::crop_surface(&cache, b);
+    cache = pixelwright_algo::resample::crop_surface(&cache, b);
     cache.prune();
 
     shift_layer(&mut sub.layers[0], -b.x0, -b.y0);
@@ -627,7 +627,7 @@ fn set_source(s: &mut Session, p: &Value, label: &str, keep_psd: bool, make: imp
 
 fn replace_contents(s: &mut Session, p: &Value) -> Result<Value> {
     let path = path_param("layer.smartObjects.replaceContents", p)?.to_string();
-    let bytes = photocraft_format::read_file(std::path::Path::new(&path)).map_err(|e| other(format!("can't read {path}: {e}")))?;
+    let bytes = pixelwright_format::read_file(std::path::Path::new(&path)).map_err(|e| other(format!("can't read {path}: {e}")))?;
     let name = base_name(&path);
     decode_source(&name, &bytes)?; // fail before touching the document
     set_source(s, p, "Replace Contents", false, |_, _| Ok(SmartSource::Embedded { file_name: name, bytes: Arc::new(bytes) }))
@@ -675,7 +675,7 @@ pub fn commit_child(s: &mut Session, index: usize) -> Result<bool> {
             SmartSource::Embedded { file_name, .. } => file_name.rsplit_once('.').map_or(file_name.as_str(), |(a, _)| a).to_string(),
             SmartSource::Linked { .. } => child.name.rsplit_once('.').map_or(child.name.as_str(), |(a, _)| a).to_string(),
         };
-        sm.source = SmartSource::Embedded { file_name: format!("{stem}.pcraft"), bytes: bytes.clone() };
+        sm.source = SmartSource::Embedded { file_name: format!("{stem}.pxwr"), bytes: bytes.clone() };
         detach_psd(doc.layer_mut(link.layer).ok_or(EngineError::NoLayer(link.layer))?);
         refresh_or_fail(doc, link.layer)
     });
@@ -762,8 +762,8 @@ fn set_filter_params(s: &mut Session, p: &Value) -> Result<Value> {
     edit_filters(s, p, "Edit Smart Filter", |sm| {
         let i = filter_index(CMD, p, sm)?;
         let f = &mut sm.smart_filters[i];
-        if f.command == photocraft_io::smart_map::UNSUPPORTED_FILTER {
-            return Err(bad(CMD, "this Photoshop filter isn't implemented in PhotoCraft: it is kept as is (it can be hidden, moved or deleted)"));
+        if f.command == pixelwright_io::smart_map::UNSUPPORTED_FILTER {
+            return Err(bad(CMD, "this Photoshop filter isn't implemented in Pixelwright: it is kept as is (it can be hidden, moved or deleted)"));
         }
         match (&mut f.params, new) {
             (Value::Object(old), Value::Object(n)) => old.extend(n),

@@ -1,11 +1,11 @@
 //! Everyday Photoshop commands: clipboard (Cut/Copy/Copy Merged/Paste/Paste in Place), Layer via
 //! Copy/Cut, Merge Visible, Auto Tone/Contrast/Color, Toggle Last State and Transform Again.
 
-use photocraft_color::PixelFormat;
-use photocraft_doc::adjust::LevelsChannel;
-use photocraft_doc::{Adjustment, Document, Layer, LayerContent, LayerId};
-use photocraft_geom::Rect;
-use photocraft_raster::Surface;
+use pixelwright_color::PixelFormat;
+use pixelwright_doc::adjust::LevelsChannel;
+use pixelwright_doc::{Adjustment, Document, Layer, LayerContent, LayerId};
+use pixelwright_geom::Rect;
+use pixelwright_raster::Surface;
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;
@@ -99,7 +99,7 @@ fn lift(src: &Surface, sel: Option<&Surface>, canvas: Rect) -> Clip {
 /// Merged composite of the visible document as a surface in the document's format.
 fn merged_surface(doc: &Document) -> Surface {
     let fmt = doc.pixel_format();
-    photocraft_compose::flatten_to_surface(doc, PixelFormat::new(fmt.mode, fmt.sample, true), None)
+    pixelwright_compose::flatten_to_surface(doc, PixelFormat::new(fmt.mode, fmt.sample, true), None)
 }
 
 fn copy(s: &mut Session, merged: bool) -> Result<Value> {
@@ -160,7 +160,7 @@ fn paste(s: &mut Session, p: &Value, in_place: bool) -> Result<Value> {
         let b = clip.bounds;
         ((cx - (b.x0 + b.x1) as f64 / 2.0).round() as i32, (cy - (b.y0 + b.y1) as f64 / 2.0).round() as i32)
     };
-    let moved = if dx == 0 && dy == 0 { clip.surface.clone() } else { photocraft_algo::resample::translate_surface(&clip.surface, dx, dy) };
+    let moved = if dx == 0 && dy == 0 { clip.surface.clone() } else { pixelwright_algo::resample::translate_surface(&clip.surface, dx, dy) };
     let target = PixelFormat::new(fmt.mode, fmt.sample, true);
     let surf = if moved.format() == target { moved } else { moved.convert(target) };
     let id = s.edit("Paste", |doc, active| {
@@ -185,8 +185,8 @@ fn new_from_clipboard(s: &mut Session) -> Result<Value> {
     }
     let fmt = clip.surface.format();
     let target = PixelFormat::new(fmt.mode, fmt.sample, true);
-    let moved = if b.x0 == 0 && b.y0 == 0 { clip.surface } else { photocraft_algo::resample::translate_surface(&clip.surface, -b.x0, -b.y0) };
-    let mut doc = Document::new("Untitled", photocraft_geom::Size::new(w, h), fmt.mode, fmt.sample);
+    let moved = if b.x0 == 0 && b.y0 == 0 { clip.surface } else { pixelwright_algo::resample::translate_surface(&clip.surface, -b.x0, -b.y0) };
+    let mut doc = Document::new("Untitled", pixelwright_geom::Size::new(w, h), fmt.mode, fmt.sample);
     let mut l = Layer::raster(doc.next_layer_name("Layer"), target);
     *crate::pixels_mut(&mut l)? = if moved.format() == target { moved } else { moved.convert(target) };
     doc.layers.push(l);
@@ -243,11 +243,11 @@ fn merge_visible(s: &mut Session) -> Result<Value> {
         // Composite of visible layers only (hidden ones stay where they are).
         let mut solo = doc.clone();
         solo.layers.retain(|l| l.visible);
-        let buf = photocraft_compose::flatten(&solo);
+        let buf = pixelwright_compose::flatten(&solo);
         let buf = if is_background { buf.over_background([1.0, 1.0, 1.0]) } else { buf };
         let fmt = doc.pixel_format();
         let fmt = if is_background { fmt } else { PixelFormat::new(fmt.mode, fmt.sample, true) };
-        let data: Vec<f32> = buf.px.iter().flat_map(|p| photocraft_raster::from_rgba(&fmt, *p)).collect();
+        let data: Vec<f32> = buf.px.iter().flat_map(|p| pixelwright_raster::from_rgba(&fmt, *p)).collect();
         let mut merged = Layer::raster(base.name.clone(), fmt);
         merged.locks = base.locks;
         let surf = crate::pixels_mut(&mut merged)?;
@@ -428,7 +428,7 @@ fn transform_again_params(s: &Session) -> Result<Value> {
             if r.len() != 4 || q.len() != 4 || q.iter().any(|row| row.len() < 2) {
                 return Err(EngineError::Other("the last transform can't be repeated".into()));
             }
-            let h = photocraft_algo::transform::Homography::rect_to_quad(
+            let h = pixelwright_algo::transform::Homography::rect_to_quad(
                 [r[0], r[1], r[2], r[3]],
                 [[q[0][0], q[0][1]], [q[1][0], q[1][1]], [q[2][0], q[2][1]], [q[3][0], q[3][1]]],
             )
@@ -661,9 +661,9 @@ mod tests {
         s.execute("file.new", json!({"width": 120, "height": 120, "mode": "gray"})).unwrap();
         s.execute("edit.paste", json!({})).unwrap();
         let d = &s.active().unwrap().doc;
-        assert_eq!(d.mode, photocraft_doc::ColorMode::Grayscale);
+        assert_eq!(d.mode, pixelwright_doc::ColorMode::Grayscale);
         let pasted = d.layers.last().unwrap().surface().unwrap();
-        assert_eq!(pasted.format().mode, photocraft_color::ColorMode::Grayscale, "pasted layer is grayscale");
+        assert_eq!(pasted.format().mode, pixelwright_color::ColorMode::Grayscale, "pasted layer is grayscale");
         assert!(!pasted.content_bounds().is_empty(), "pasted content exists");
     }
 
@@ -716,7 +716,7 @@ mod tests {
             let mut s = Session::new();
             s.execute("file.new", json!({"width": 40, "height": 30, "depth": depth, "background": "#336699"})).unwrap();
             s.edit("partial selection", |doc, _| {
-                let mut m = photocraft_raster::Surface::new(PixelFormat::GRAY8);
+                let mut m = pixelwright_raster::Surface::new(PixelFormat::GRAY8);
                 m.fill_rect(Rect::new(5, 5, 15, 15), &[1.0]);
                 m.fill_rect(Rect::new(15, 5, 20, 15), &[0.5]);
                 doc.selection = Some(m);

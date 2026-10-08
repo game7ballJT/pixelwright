@@ -4,23 +4,23 @@ mod common;
 use std::sync::Arc;
 
 use common::*;
-use photocraft_color::{ColorMode, SampleType};
-use photocraft_doc::{DocId, Document};
-use photocraft_format::*;
+use pixelwright_color::{ColorMode, SampleType};
+use pixelwright_doc::{DocId, Document};
+use pixelwright_format::*;
 
 #[test]
 fn autosave_then_recover() {
     let dir = temp_dir("recovery");
     let doc = Arc::new(rich_doc(ColorMode::Rgb, SampleType::U16));
     let saver = Autosaver::new(&dir, "doc-1");
-    saver.request(doc.clone(), 7, Some("/work/a.pcraft".into()), SaveOptions::default());
+    saver.request(doc.clone(), 7, Some("/work/a.pxwr".into()), SaveOptions::default());
     let r = saver.flush().expect("a save ran");
     let stats = r.unwrap();
     assert!(stats.tiles_written > 0);
     let entries = list_recovery(&dir);
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].info.revision, 7);
-    assert_eq!(entries[0].info.original_path.as_deref(), Some("/work/a.pcraft"));
+    assert_eq!(entries[0].info.original_path.as_deref(), Some("/work/a.pxwr"));
     assert_eq!(entries[0].info.document_name, "Rich");
     assert_eq!(recover(&entries[0]).unwrap(), *doc);
     discard_recovery(&dir, &entries[0]).unwrap();
@@ -112,7 +112,7 @@ fn recovered_entries_survive_a_second_crash_until_saved_or_closed() {
     {
         let mut launch = RecoveryStore::new(&dir);
         launch.autosave(&Arc::new(a.clone()), 4, None);
-        launch.autosave(&Arc::new(b.clone()), 6, Some("/work/b.pcraft".into()));
+        launch.autosave(&Arc::new(b.clone()), 6, Some("/work/b.pxwr".into()));
     }
     assert_eq!(list_recovery(&dir).len(), 2);
     // Launch 2 recovers both and crashes before its first autosave: nothing may be lost.

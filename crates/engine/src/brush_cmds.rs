@@ -6,12 +6,12 @@
 //! (`{"scattering": {"enabled": true}}`). Strokes are deterministic: the jitter seed is the `seed`
 //! param or a hash of the points, so a journaled command replays to identical pixels.
 
-use photocraft_doc::LayerContent;
-use photocraft_geom::Rect;
-use photocraft_paint::mixer::{MixerSettings, apply_mixer_stroke};
-use photocraft_paint::replace::{Limits, ReplaceMode, ReplaceSettings, Sampling, apply_color_replacement};
-use photocraft_paint::{BrushPreset, BrushSettings, GrayTile, Stroke, StrokePoint, StrokeRenderer, TipShape, render_stroke};
-use photocraft_raster::Surface;
+use pixelwright_doc::LayerContent;
+use pixelwright_geom::Rect;
+use pixelwright_paint::mixer::{MixerSettings, apply_mixer_stroke};
+use pixelwright_paint::replace::{Limits, ReplaceMode, ReplaceSettings, Sampling, apply_color_replacement};
+use pixelwright_paint::{BrushPreset, BrushSettings, GrayTile, Stroke, StrokePoint, StrokeRenderer, TipShape, render_stroke};
+use pixelwright_raster::Surface;
 use serde_json::{Value, json};
 
 use crate::commands::{CommandSpec, has_paintable, is_mask_target, paint_surface};
@@ -138,7 +138,7 @@ pub fn merge_brush(base: &BrushSettings, patch: &Value, cmd: &str) -> Result<Bru
 }
 
 pub(crate) fn validate_brush_size(brush: &BrushSettings, cmd: &str) -> Result<()> {
-    let max = photocraft_paint::MAX_BRUSH_SIZE;
+    let max = pixelwright_paint::MAX_BRUSH_SIZE;
     if !brush.size.is_finite() || brush.size > max {
         return Err(bad(cmd, format!("brush size must be finite and at most {max} px")));
     }
@@ -149,7 +149,7 @@ pub(crate) fn validate_brush_size(brush: &BrushSettings, cmd: &str) -> Result<()
 }
 
 fn find_preset<'a>(s: &'a Session, name: &str, cmd: &str) -> Result<&'a BrushPreset> {
-    photocraft_paint::presets::find(&s.tools.presets, name).ok_or_else(|| bad(cmd, format!("no brush preset named `{name}`")))
+    pixelwright_paint::presets::find(&s.tools.presets, name).ok_or_else(|| bad(cmd, format!("no brush preset named `{name}`")))
 }
 
 /// Resolve the brush for a stroke command: session brush ← `preset` ← `brush` ← legacy scalar
@@ -185,15 +185,15 @@ pub fn resolve_brush(s: &Session, p: &Value, cmd: &str) -> Result<BrushSettings>
     b.erase = flag(p, "erase", false);
     b.seed = match p.get("seed").and_then(Value::as_u64) {
         Some(v) => v,
-        None => photocraft_paint::rng::seed_from_bytes(p.get("points").map(|v| v.to_string()).unwrap_or_default().as_bytes()),
+        None => pixelwright_paint::rng::seed_from_bytes(p.get("points").map(|v| v.to_string()).unwrap_or_default().as_bytes()),
     };
     validate_brush_size(&b, cmd)?;
     Ok(b)
 }
 
-fn layer_id(s: &Session, p: &Value) -> Result<photocraft_doc::LayerId> {
+fn layer_id(s: &Session, p: &Value) -> Result<pixelwright_doc::LayerId> {
     match p.get("layer").and_then(Value::as_u64) {
-        Some(id) => Ok(photocraft_doc::LayerId(id)),
+        Some(id) => Ok(pixelwright_doc::LayerId(id)),
         None => s.active().and_then(|d| d.active_layer).ok_or(EngineError::Other("no active layer".into())),
     }
 }
@@ -207,7 +207,7 @@ fn damage_json(s: &mut Session, dmg: Rect) -> Value {
 
 /// The target layer (`None` for a channel), brush and zoom of a stroke. On a mask or channel the
 /// eraser paints the background colour (Photoshop).
-fn stroke_target(s: &Session, p: &Value, brush: BrushSettings) -> Result<(Option<photocraft_doc::LayerId>, BrushSettings, f32)> {
+fn stroke_target(s: &Session, p: &Value, brush: BrushSettings) -> Result<(Option<pixelwright_doc::LayerId>, BrushSettings, f32)> {
     let gray = is_mask_target(p) || crate::channel_cmds::is_channel_target(p);
     let id = if crate::channel_cmds::is_channel_target(p) { None } else { Some(layer_id(s, p)?) };
     let brush = if gray && brush.erase { BrushSettings { erase: false, color: s.tools.background, ..brush } } else { brush };
@@ -287,7 +287,7 @@ fn pencil_brush(s: &Session, p: &Value) -> Result<BrushSettings> {
 /// (normal|multiply|screen|…). The Eraser has no blend mode in Photoshop, so it is forced to Normal.
 fn with_blend_mode(mut b: BrushSettings, p: &Value) -> BrushSettings {
     if b.erase {
-        b.mode = photocraft_color::BlendMode::Normal;
+        b.mode = pixelwright_color::BlendMode::Normal;
     } else if let Some(m) = p.get("mode").and_then(Value::as_str).and_then(crate::commands::blend_from_str) {
         b.mode = m;
     }
@@ -307,7 +307,7 @@ pub fn paint_stroke(s: &mut Session, p: &Value) -> Result<Value> {
 /// `"seed": live.seed` gives the same pixels.
 pub struct LiveStroke {
     /// The active document with the stroke so far.
-    pub doc: std::sync::Arc<photocraft_doc::Document>,
+    pub doc: std::sync::Arc<pixelwright_doc::Document>,
     /// Jitter seed to pass to `paint.stroke`.
     pub seed: u64,
     renderer: StrokeRenderer,
@@ -316,7 +316,7 @@ pub struct LiveStroke {
     pre: Surface,
     sel: Option<Surface>,
     lock: bool,
-    layer: Option<photocraft_doc::LayerId>,
+    layer: Option<pixelwright_doc::LayerId>,
     params: Value,
     /// Where the doc shows the stroke's end as finishing it would draw it (see `push`).
     tail: Rect,
@@ -443,11 +443,11 @@ fn mixer_brush(s: &mut Session, p: &Value) -> Result<Value> {
     let dmg = s.edit("Mixer Brush", |doc, _| {
         let sel = doc.selection.clone();
         let sample = if sample_all {
-            let ds = photocraft_paint::dabs(&stroke);
-            let ctx = photocraft_paint::BrushContext::new(&stroke.brush);
+            let ds = pixelwright_paint::dabs(&stroke);
+            let ctx = pixelwright_paint::BrushContext::new(&stroke.brush);
             let area = ds.iter().fold(Rect::EMPTY, |r, d| r.union(&ctx.dab_rect(d, false)));
-            let buf = photocraft_compose::render(doc, area);
-            let mut surf = Surface::new(photocraft_color::PixelFormat::RGBA32F);
+            let buf = pixelwright_compose::render(doc, area);
+            let mut surf = Surface::new(pixelwright_color::PixelFormat::RGBA32F);
             let flat: Vec<f32> = buf.px.iter().flatten().copied().collect();
             if !area.is_empty() {
                 surf.write_region(area, &flat);
@@ -582,7 +582,7 @@ fn define_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
     for y in 0..h {
         for x in 0..w {
             let c = surf.rgba(area.x0 + x as i32, area.y0 + y as i32);
-            let l = photocraft_color::blend::lum([c[0], c[1], c[2]]);
+            let l = pixelwright_color::blend::lum([c[0], c[1], c[2]]);
             v[y * w + x] = ((1.0 - l) * c[3] * sv[(y * w + x) * sc]).clamp(0.0, 1.0);
         }
     }
@@ -663,7 +663,7 @@ fn light_json(b: &BrushSettings, skip: (bool, bool, bool)) -> Value {
         c.dual_brush.tip = TipShape::Round;
     }
     if skip.2 {
-        c.texture.pattern = photocraft_paint::Pattern::default();
+        c.texture.pattern = pixelwright_paint::Pattern::default();
     }
     serde_json::to_value(&c).unwrap_or(Value::Null)
 }

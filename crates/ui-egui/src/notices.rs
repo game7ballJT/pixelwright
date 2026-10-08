@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::PhotocraftApp;
+use crate::PixelwrightApp;
 
 const WAYLAND_FILE_DROP_DISMISSED: &str = "ui.waylandFileDropGuidanceDismissed";
 /// At most this many notices are kept; older ones drop off.
@@ -28,14 +28,14 @@ pub struct Notice {
 }
 
 /// Show a notice (newest last); returns its id.
-pub fn post(app: &mut PhotocraftApp, title: impl Into<String>, lines: Vec<String>, error: bool, dismiss_pref: Option<&str>) -> u64 {
+pub fn post(app: &mut PixelwrightApp, title: impl Into<String>, lines: Vec<String>, error: bool, dismiss_pref: Option<&str>) -> u64 {
     let id = app.ui.alloc_id();
     app.ui.notices.push(Notice { id, title: title.into(), lines, error, dismiss_pref: dismiss_pref.map(str::to_owned) });
     cap_notices(app);
     id
 }
 
-fn cap_notices(app: &mut PhotocraftApp) {
+fn cap_notices(app: &mut PixelwrightApp) {
     while app.ui.notices.len() > MAX_NOTICES {
         let oldest_temporary = app.ui.notices.iter().position(|notice| notice.dismiss_pref.is_none()).unwrap_or(0);
         app.ui.notices.remove(oldest_temporary);
@@ -43,7 +43,7 @@ fn cap_notices(app: &mut PhotocraftApp) {
 }
 
 /// Show the Wayland-specific fallback guidance unless the user dismissed it in preferences.
-pub fn wayland_file_drop_guidance(app: &mut PhotocraftApp) {
+pub fn wayland_file_drop_guidance(app: &mut PixelwrightApp) {
     if !app.services.is_wayland
         || app.session.prefs().dialogs.get(WAYLAND_FILE_DROP_DISMISSED).and_then(serde_json::Value::as_bool) == Some(true)
         || app.ui.notices.iter().any(|notice| notice.dismiss_pref.as_deref() == Some(WAYLAND_FILE_DROP_DISMISSED))
@@ -54,14 +54,14 @@ pub fn wayland_file_drop_guidance(app: &mut PhotocraftApp) {
         app,
         tl!("Native file drag-and-drop is unavailable"),
         vec![
-            tl!("Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run PhotoCraft under XWayland with `WAYLAND_DISPLAY= photocraft`.").into(),
+            tl!("Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run Pixelwright under XWayland with `WAYLAND_DISPLAY= pixelwright`.").into(),
         ],
         false,
         Some(WAYLAND_FILE_DROP_DISMISSED),
     );
 }
 
-fn dismiss(app: &mut PhotocraftApp, id: u64) {
+fn dismiss(app: &mut PixelwrightApp, id: u64) {
     let dismiss_pref = app.ui.notices.iter().find(|notice| notice.id == id).and_then(|notice| notice.dismiss_pref.clone());
     app.ui.notices.retain(|notice| notice.id != id);
     if let Some(key) = dismiss_pref {
@@ -73,7 +73,7 @@ fn dismiss(app: &mut PhotocraftApp, id: u64) {
 
 /// Report import/export `warnings` for the file operation `what` (e.g. "Opened a.psd"): the status
 /// bar says how many there were, and a notice lists them. Nothing happens when there are none.
-pub fn io_warnings(app: &mut PhotocraftApp, what: &str, warnings: &[String]) {
+pub fn io_warnings(app: &mut PixelwrightApp, what: &str, warnings: &[String]) {
     let Some(first) = warnings.first() else { return };
     let n = warnings.len();
     app.ui.status = if n == 1 { format!("{what}: {first}") } else { format!("{what} with {n} warnings: {first} …") };
@@ -83,21 +83,21 @@ pub fn io_warnings(app: &mut PhotocraftApp, what: &str, warnings: &[String]) {
 
 /// Report a failed file operation: the status bar shows it as an error and a notice keeps it on
 /// screen until dismissed.
-pub fn error(app: &mut PhotocraftApp, message: String) {
+pub fn error(app: &mut PixelwrightApp, message: String) {
     app.ui.status = message.clone();
     app.ui.status_error = true;
     post(app, message, Vec::new(), true, None);
 }
 
 /// Draw the notices; each has a close button.
-pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
+pub fn show(app: &mut PixelwrightApp, ctx: &egui::Context) {
     if app.ui.notices.is_empty() {
         return;
     }
     let t = crate::theme::Tokens::get(ctx);
     let mut dismiss_id = None;
     // Clear the status bar (~24 px) and leave the dock's edge some air.
-    egui::Area::new(egui::Id::new("photocraft-notices"))
+    egui::Area::new(egui::Id::new("pixelwright-notices"))
         .order(egui::Order::Foreground)
         .anchor(egui::Align2::RIGHT_BOTTOM, egui::vec2(-16.0, -36.0))
         .interactable(true)
@@ -139,13 +139,13 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{PhotocraftApp, Services};
-    use photocraft_engine::Session;
+    use crate::{PixelwrightApp, Services};
+    use pixelwright_engine::Session;
     use std::sync::{Arc, Mutex};
 
     #[test]
     fn wayland_guidance_is_only_shown_in_wayland_sessions() {
-        let mut app = PhotocraftApp::new(Session::new(), Services { is_wayland: true, ..Default::default() });
+        let mut app = PixelwrightApp::new(Session::new(), Services { is_wayland: true, ..Default::default() });
         assert_eq!(app.ui.notices.len(), 1);
         assert_eq!(app.ui.notices[0].title, "Native file drag-and-drop is unavailable");
         let guidance = app.ui.notices[0].lines.join(" ");
@@ -153,7 +153,7 @@ mod tests {
         assert!(guidance.contains("File › Open"));
         assert!(!guidance.contains("Ctrl+V"));
         assert!(guidance.contains("XWayland"));
-        assert!(guidance.contains("WAYLAND_DISPLAY= photocraft"));
+        assert!(guidance.contains("WAYLAND_DISPLAY= pixelwright"));
         assert_eq!(app.ui.notices[0].dismiss_pref.as_deref(), Some(WAYLAND_FILE_DROP_DISMISSED));
         for i in 0..MAX_NOTICES {
             post(&mut app, format!("Transient {i}"), Vec::new(), false, None);
@@ -161,7 +161,7 @@ mod tests {
         assert_eq!(app.ui.notices.len(), MAX_NOTICES);
         assert!(app.ui.notices.iter().any(|notice| notice.dismiss_pref.is_some()));
 
-        let app = PhotocraftApp::new(Session::new(), Services::default());
+        let app = PixelwrightApp::new(Session::new(), Services::default());
         assert!(app.ui.notices.is_empty());
     }
 
@@ -179,20 +179,20 @@ mod tests {
             })),
             ..Default::default()
         };
-        let mut app = PhotocraftApp::new(Session::new(), services);
+        let mut app = PixelwrightApp::new(Session::new(), services);
         let id = app.ui.notices[0].id;
         dismiss(&mut app, id);
         crate::prefs_ui::tick(&mut app, &egui::Context::default());
 
         let services =
             Services { is_wayland: true, load_prefs: Some(Box::new(move || saved.lock().unwrap_or_else(|e| e.into_inner()).clone())), ..Default::default() };
-        let app = PhotocraftApp::new(Session::new(), services);
+        let app = PixelwrightApp::new(Session::new(), services);
         assert!(app.ui.notices.is_empty());
     }
 
     #[test]
     fn dismissing_a_notice_writes_its_own_preference_key() {
-        let mut app = PhotocraftApp::new(Session::new(), Services::default());
+        let mut app = PixelwrightApp::new(Session::new(), Services::default());
         post(&mut app, "Dismissible", Vec::new(), false, Some("ui.testNoticeDismissed"));
         let id = app.ui.notices[0].id;
         dismiss(&mut app, id);

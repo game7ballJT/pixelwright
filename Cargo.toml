@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
 members = ["crates/*", "apps/*", "xtask"]
-default-members = ["crates/*", "apps/photocraft", "apps/photocraft-cli", "xtask"]
+default-members = ["crates/*", "apps/pixelwright", "apps/pixelwright-cli", "xtask"]
 
 [workspace.package]
 version = "0.5.0"
@@ -11,29 +11,29 @@ rust-version = "1.95"
 
 [workspace.dependencies]
 # internal
-photocraft-geom = { path = "crates/geom" }
-photocraft-color = { path = "crates/color" }
-photocraft-cms = { path = "crates/cms" }
-photocraft-raster = { path = "crates/raster" }
-photocraft-doc = { path = "crates/doc" }
-photocraft-ops = { path = "crates/ops" }
-photocraft-psd = { path = "crates/psd" }
-photocraft-codecs = { path = "crates/codecs" }
-photocraft-raw = { path = "crates/raw" }
-photocraft-compose = { path = "crates/compose" }
-photocraft-gpu = { path = "crates/gpu" }
-photocraft-paint = { path = "crates/paint" }
-photocraft-algo = { path = "crates/algo" }
-photocraft-io = { path = "crates/io" }
-photocraft-text = { path = "crates/text" }
-photocraft-vector = { path = "crates/vector" }
-photocraft-format = { path = "crates/format" }
-photocraft-automation = { path = "crates/automation" }
-photocraft-plugins = { path = "crates/plugins" }
-photocraft-engine = { path = "crates/engine" }
-photocraft-ui-egui = { path = "crates/ui-egui" }
-photocraft-testkit = { path = "crates/testkit" }
-photocraft-tablet = { path = "crates/tablet" }
+pixelwright-geom = { path = "crates/geom" }
+pixelwright-color = { path = "crates/color" }
+pixelwright-cms = { path = "crates/cms" }
+pixelwright-raster = { path = "crates/raster" }
+pixelwright-doc = { path = "crates/doc" }
+pixelwright-ops = { path = "crates/ops" }
+pixelwright-psd = { path = "crates/psd" }
+pixelwright-codecs = { path = "crates/codecs" }
+pixelwright-raw = { path = "crates/raw" }
+pixelwright-compose = { path = "crates/compose" }
+pixelwright-gpu = { path = "crates/gpu" }
+pixelwright-paint = { path = "crates/paint" }
+pixelwright-algo = { path = "crates/algo" }
+pixelwright-io = { path = "crates/io" }
+pixelwright-text = { path = "crates/text" }
+pixelwright-vector = { path = "crates/vector" }
+pixelwright-format = { path = "crates/format" }
+pixelwright-automation = { path = "crates/automation" }
+pixelwright-plugins = { path = "crates/plugins" }
+pixelwright-engine = { path = "crates/engine" }
+pixelwright-ui-egui = { path = "crates/ui-egui" }
+pixelwright-testkit = { path = "crates/testkit" }
+pixelwright-tablet = { path = "crates/tablet" }
 
 # external
 thiserror = "2"
@@ -70,7 +70,7 @@ opt-level = 1
 lto = "thin"
 codegen-units = 1
 
-# The browser build (apps/photocraft-web, `data-cargo-profile` in its index.html). Hosts cap the
+# The browser build (apps/pixelwright-web, `data-cargo-profile` in its index.html). Hosts cap the
 # size of a single file (Cloudflare Pages/Workers: 25 MiB), and the wasm is downloaded on every
 # visit, so this profile optimizes for size: fat LTO, and opt-level "s" for everything except the
 # pixel-processing crates, which keep opt-level 3 so filters and compositing stay fast. panic
@@ -87,15 +87,15 @@ strip = "debuginfo"
 [profile.wasm-release.package."*"]
 opt-level = "s"
 
-[profile.wasm-release.package.photocraft-raster]
+[profile.wasm-release.package.pixelwright-raster]
 opt-level = 3
-[profile.wasm-release.package.photocraft-color]
+[profile.wasm-release.package.pixelwright-color]
 opt-level = 3
-[profile.wasm-release.package.photocraft-cms]
+[profile.wasm-release.package.pixelwright-cms]
 opt-level = 3
-[profile.wasm-release.package.photocraft-compose]
+[profile.wasm-release.package.pixelwright-compose]
 opt-level = 3
-[profile.wasm-release.package.photocraft-algo]
+[profile.wasm-release.package.pixelwright-algo]
 opt-level = 3
-[profile.wasm-release.package.photocraft-paint]
+[profile.wasm-release.package.pixelwright-paint]
 opt-level = 3

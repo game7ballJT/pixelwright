@@ -1,7 +1,7 @@
 //! Layer tree reconstruction.
 
-use photocraft_psd::testgen;
-use photocraft_psd::*;
+use pixelwright_psd::testgen;
+use pixelwright_psd::*;
 
 fn rec(name: &str, kind: Option<SectionType>) -> LayerRecord {
     let mut r = LayerRecord { name: name.as_bytes().to_vec(), ..Default::default() };

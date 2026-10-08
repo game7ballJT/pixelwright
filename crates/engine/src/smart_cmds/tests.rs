@@ -23,7 +23,7 @@ fn paint(s: &mut Session) {
             for x in r.x0..r.x1 {
                 let v = ((x * 7 + y * 13) % 23) as f32 / 22.0;
                 let a = if (x + y) % 5 == 0 { 0.5 } else { 1.0 };
-                data.extend(photocraft_raster::from_rgba(&fmt, [v, 1.0 - v, ((x * y) % 7) as f32 / 6.0, a]));
+                data.extend(pixelwright_raster::from_rgba(&fmt, [v, 1.0 - v, ((x * y) % 7) as f32 / 6.0, a]));
             }
         }
         surf.write_region(r, &data);
@@ -33,7 +33,7 @@ fn paint(s: &mut Session) {
 }
 
 fn flat(s: &Session) -> Vec<[f32; 4]> {
-    photocraft_compose::flatten(&s.active().unwrap().doc).px
+    pixelwright_compose::flatten(&s.active().unwrap().doc).px
 }
 
 fn max_diff(a: &[[f32; 4]], b: &[[f32; 4]]) -> f32 {
@@ -76,7 +76,7 @@ fn conversion_is_pixel_identical_at_every_depth() {
         assert!((l.opacity - 0.6).abs() < 1e-6, "opacity stays on the smart layer");
         let sm = active_smart(&s);
         let SmartSource::Embedded { file_name, bytes } = &sm.source else { panic!() };
-        assert!(file_name.ends_with(".pcraft"));
+        assert!(file_name.ends_with(".pxwr"));
         // The nested document is cropped to the content, including the off-canvas part.
         let inner = decode_source(file_name, bytes).unwrap();
         assert_eq!((inner.size.width, inner.size.height), (46, 33));
@@ -359,7 +359,7 @@ fn rasterize_and_via_copy() {
 }
 
 #[test]
-fn pcraft_round_trip_keeps_live_smart_objects() {
+fn pxwr_round_trip_keeps_live_smart_objects() {
     for depth in [8, 16] {
         let mut s = session(depth);
         paint(&mut s);
@@ -369,8 +369,8 @@ fn pcraft_round_trip_keeps_live_smart_objects() {
         s.execute("filter.noise.addNoise", json!({"amount": 20, "seed": 3})).unwrap();
         s.execute("layer.smartFilter.blendingOptions", json!({"opacity": 0.5, "blend": "screen"})).unwrap();
         let doc = s.active().unwrap().doc.clone();
-        let bytes = photocraft_format::save_to_bytes(&doc, &Default::default()).unwrap();
-        let back = photocraft_format::load_from_bytes(&bytes).unwrap();
+        let bytes = pixelwright_format::save_to_bytes(&doc, &Default::default()).unwrap();
+        let back = pixelwright_format::load_from_bytes(&bytes).unwrap();
         let id = s.active().unwrap().active_layer.unwrap();
         let (a, b) = (smart(&doc, id).unwrap(), smart(&back, id).unwrap());
         assert_eq!(a, b, "depth {depth}");
@@ -392,13 +392,13 @@ fn psd_placed_layer_renders_from_lnk2_data() {
     let mut inner = Document::with_background(
         "in",
         Size::new(10, 8),
-        photocraft_color::ColorMode::Rgb,
-        photocraft_color::SampleType::U8,
-        photocraft_color::Color::rgba(0.0, 1.0, 0.0, 1.0),
+        pixelwright_color::ColorMode::Rgb,
+        pixelwright_color::SampleType::U8,
+        pixelwright_color::Color::rgba(0.0, 1.0, 0.0, 1.0),
     );
     inner.layers[0].surface_mut().unwrap().fill_rect(Rect::new(0, 0, 5, 8), &[1.0, 0.0, 0.0, 1.0]);
-    let png = photocraft_io::export(&inner, "png", &Default::default()).unwrap().bytes;
-    let lnk2 = photocraft_io::linked::encode_linked_file(&photocraft_io::linked::LinkedFile { uuid: "uuid-1".into(), file_name: "in.png".into(), bytes: png });
+    let png = pixelwright_io::export(&inner, "png", &Default::default()).unwrap().bytes;
+    let lnk2 = pixelwright_io::linked::encode_linked_file(&pixelwright_io::linked::LinkedFile { uuid: "uuid-1".into(), file_name: "in.png".into(), bytes: png });
     let mut s = session(8);
     s.edit("place", |doc, active| {
         doc.metadata.psd_global_blocks.push((*b"8BIM", *b"lnk2", Arc::new(lnk2)));
@@ -428,24 +428,24 @@ fn psd_placed_layer_renders_from_lnk2_data() {
 
 #[test]
 fn export_replace_and_linked_contents() {
-    let dir = std::env::temp_dir().join(format!("pcraft-smart-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("pxwr-smart-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let mut s = session(8);
     paint(&mut s);
     convert(&mut s);
-    let out = dir.join("contents.pcraft");
+    let out = dir.join("contents.pxwr");
     s.execute("layer.smartObjects.exportContents", json!({"path": out.to_str().unwrap()})).unwrap();
-    assert!(photocraft_format::is_pcraft(&std::fs::read(&out).unwrap()));
+    assert!(pixelwright_format::is_pxwr(&std::fs::read(&out).unwrap()));
     // Replace with a flat PNG.
     let png_doc = Document::with_background(
         "p",
         Size::new(4, 4),
-        photocraft_color::ColorMode::Rgb,
-        photocraft_color::SampleType::U8,
-        photocraft_color::Color::rgba(1.0, 1.0, 0.0, 1.0),
+        pixelwright_color::ColorMode::Rgb,
+        pixelwright_color::SampleType::U8,
+        pixelwright_color::Color::rgba(1.0, 1.0, 0.0, 1.0),
     );
     let png = dir.join("yellow.png");
-    std::fs::write(&png, photocraft_io::export(&png_doc, "png", &Default::default()).unwrap().bytes).unwrap();
+    std::fs::write(&png, pixelwright_io::export(&png_doc, "png", &Default::default()).unwrap().bytes).unwrap();
     s.execute("layer.smartObjects.replaceContents", json!({"path": png.to_str().unwrap()})).unwrap();
     let sm = active_smart(&s);
     assert_eq!(sm.cache.as_ref().unwrap().content_bounds(), Rect::new(-6, 5, -2, 9), "transform kept");
@@ -457,7 +457,7 @@ fn export_replace_and_linked_contents() {
     let mut red = png_doc.clone();
     let rb = red.bounds();
     red.layers[0].surface_mut().unwrap().fill_rect(rb, &[1.0, 0.0, 0.0, 1.0]);
-    std::fs::write(&linked, photocraft_io::export(&red, "png", &Default::default()).unwrap().bytes).unwrap();
+    std::fs::write(&linked, pixelwright_io::export(&red, "png", &Default::default()).unwrap().bytes).unwrap();
     s.execute("layer.smartObjects.updateAllModifiedContent", json!({})).unwrap();
     assert_eq!(active_smart(&s).cache.unwrap().rgba(-5, 6), [1.0, 0.0, 0.0, 1.0]);
     s.execute("layer.smartObjects.convertToEmbedded", json!({})).unwrap();
@@ -508,7 +508,7 @@ fn smart_filter_blur_repeats_the_canvas_edge_like_a_layer_filter() {
                 for y in r.y0..r.y1 {
                     for x in r.x0..r.x1 {
                         let v = if (x / 8 + y / 8) % 2 == 0 { 0.2 } else { 0.9 };
-                        data.extend(photocraft_raster::from_rgba(&fmt, [v, 0.5, 1.0 - v, 1.0]));
+                        data.extend(pixelwright_raster::from_rgba(&fmt, [v, 0.5, 1.0 - v, 1.0]));
                     }
                 }
                 surf.write_region(r, &data);
@@ -573,7 +573,7 @@ fn warp_on_a_distorted_smart_object_follows_the_corners() {
     let inv = h.inverse().unwrap();
     let src: Vec<(f64, f64)> = quad.iter().map(|p| inv.apply(p[0], p[1])).collect();
     let b = src.iter().fold([f64::MAX, f64::MAX, f64::MIN, f64::MIN], |b, p| [b[0].min(p.0), b[1].min(p.1), b[2].max(p.0), b[3].max(p.1)]);
-    sm.warp = Some(photocraft_geom::warp::Warp::custom(photocraft_geom::warp::BezierMesh::identity(b, 1, 1), b));
+    sm.warp = Some(pixelwright_geom::warp::Warp::custom(pixelwright_geom::warp::BezierMesh::identity(b, 1, 1), b));
     let layer = Layer::new("w", LayerContent::Smart(sm));
     let doc_warp = crate::warp_cmds::smart_warp_doc_space(&layer).unwrap();
     let pts = doc_warp.mesh.unwrap().points;

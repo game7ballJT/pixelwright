@@ -3,7 +3,7 @@
 
 use serde_json::{Value, json};
 
-use crate::PhotocraftApp;
+use crate::PixelwrightApp;
 use crate::state::{Dialog, DialogKind};
 use crate::widgets::{ButtonRole, DialogButton, dialog_buttons};
 
@@ -63,7 +63,7 @@ pub fn free_press(ctx: &egui::Context, canvas: egui::Rect) -> Option<egui::Pos2>
     })
 }
 
-pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
+pub fn show(app: &mut PixelwrightApp, ctx: &egui::Context) {
     let dialogs = app.ui.dialogs.clone();
     let mut shown = Vec::new();
     for d in dialogs {
@@ -155,16 +155,14 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                         "contributors" => crate::credits::contributors_ui(ui),
                         "models" => crate::credits::models_ui(ui),
                         _ => {
-                            ui.label(tl!("PhotoCraft — an open-source, native image editor written in Rust."));
-                            ui.label(crate::i18n::fmt(tl!("Version {version}"), &[("version", &photocraft_engine::build_info::long_version())]));
+                            ui.label(tl!("Pixelwright — an open-source, native image editor written in Rust."));
+                            ui.label(crate::i18n::fmt(tl!("Version {version}"), &[("version", &pixelwright_engine::build_info::long_version())]));
                             ui.add_space(12.0);
                             ui.vertical_centered(|ui| {
-                                crate::links::discord_button(app, ui, 220.0);
-                                ui.add_space(8.0);
                                 crate::links::link_row(app, ui);
                             });
                             ui.add_space(10.0);
-                            ui.weak("egui · wgpu · photocraft-engine");
+                            ui.weak("egui · wgpu · pixelwright-engine");
                         }
                     }
                 }
@@ -294,7 +292,7 @@ pub fn title(d: &Dialog) -> String {
     match d.kind {
         DialogKind::NewDocument => "New Document".into(),
         DialogKind::About if d.fields.get("systemInfo").and_then(Value::as_bool) == Some(true) => "System Info".into(),
-        DialogKind::About => "About PhotoCraft".into(),
+        DialogKind::About => "About Pixelwright".into(),
         DialogKind::LayerStyle => "Layer Style".into(),
         DialogKind::Command => d.fields.get("__label").and_then(Value::as_str).unwrap_or("Command").trim_end_matches('…').to_string(),
         DialogKind::Error => "Error".into(),
@@ -302,7 +300,7 @@ pub fn title(d: &Dialog) -> String {
 }
 
 /// Confirm a dialog: run its action and close it. Used by the OK button and by automation.
-pub fn confirm(app: &mut PhotocraftApp, id: u64) -> Result<Value, String> {
+pub fn confirm(app: &mut PixelwrightApp, id: u64) -> Result<Value, String> {
     let d = app.ui.close_dialog(id).ok_or_else(|| format!("no dialog {id}"))?;
     match d.kind {
         DialogKind::NewDocument => {
@@ -334,7 +332,7 @@ pub fn confirm(app: &mut PhotocraftApp, id: u64) -> Result<Value, String> {
 /// Open the parameter dialog of `command`: the adjustment editor for `image.adjustments.*`, the
 /// schema dialog for filters, the Color Range dialog for `select.colorRange`, otherwise a bare
 /// confirm dialog.
-pub fn open_command_dialog(app: &mut PhotocraftApp, command: &str, label: &str) -> u64 {
+pub fn open_command_dialog(app: &mut PixelwrightApp, command: &str, label: &str) -> u64 {
     if command == crate::color_range_ui::COMMAND {
         return crate::color_range_ui::open(app);
     }
@@ -360,9 +358,9 @@ mod tests {
     fn dragging_the_title_bar_moves_the_dialog() {
         use egui_kittest::{Harness, kittest::Queryable};
 
-        let app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let mut harness = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_ui_state(|ui, app| show(app, ui.ctx()), app);
-        PhotocraftApp::setup_context(&harness.ctx, crate::theme::ThemeKind::ALL[0]);
+        PixelwrightApp::setup_context(&harness.ctx, crate::theme::ThemeKind::ALL[0]);
         harness.state_mut().ui.open_dialog(DialogKind::LayerStyle, serde_json::Map::new());
         harness.run_steps(3);
         let before = harness.get_by_label("Layer Style").rect();

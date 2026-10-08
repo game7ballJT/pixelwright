@@ -1,9 +1,9 @@
 //! Timing for the heavier second-batch filters on a ~24 MP (6000×4000) RGBA8 layer.
-//! `cargo run --release -p photocraft-algo --example bench_filters2 [filter-name-substring]`
-use photocraft_algo::*;
-use photocraft_color::PixelFormat;
-use photocraft_geom::Rect;
-use photocraft_raster::Surface;
+//! `cargo run --release -p pixelwright-algo --example bench_filters2 [filter-name-substring]`
+use pixelwright_algo::*;
+use pixelwright_color::PixelFormat;
+use pixelwright_geom::Rect;
+use pixelwright_raster::Surface;
 
 fn main() {
     let only = std::env::args().nth(1);

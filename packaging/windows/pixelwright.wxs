@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Pixelwright MSI (WiX Toolset v5: `dotnet tool install -g wix`). Built by package.ps1:
+
+    wix build pixelwright.wxs -arch x64 -d Version=1.2.3 -d BinDir=... -d IconPath=... -o out.msi
+
+  Per-machine install into Program Files, a Start Menu shortcut, `.pxwr` owned by Pixelwright,
+  and Pixelwright offered under "Open with" for PSD/PSB and the image formats it reads (without
+  taking over the user's default app for them).
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+      Name="Pixelwright"
+      Manufacturer="Learning Machines LLC"
+      Version="$(var.Version)"
+      UpgradeCode="D9660F32-2D0A-4ABE-B73D-17BE25F1542C"
+      Scope="perMachine"
+      Compressed="yes"
+      Language="1033">
+    <SummaryInformation Description="Pixelwright image editor" Manufacturer="Learning Machines LLC" />
+    <!-- Same-version upgrades let successive pre-releases of one X.Y.Z replace each other
+         (MSI versions are numeric, so 1.2.3-rc.1 and 1.2.3-rc.2 are both 1.2.3). -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+        DowngradeErrorMessage="A newer version of Pixelwright is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- MSI caches this icon using its Id as the filename. Advertised shortcuts to an
+         .exe need an .exe icon identifier (ICE50), even when the source is an ICO. -->
+    <Icon Id="PixelwrightIcon.exe" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="PixelwrightIcon.exe" />
+    <Property Id="ARPURLINFOABOUT" Value="https://www.jonmcgee.online/apps/pixelwright/" />
+    <Property Id="ARPURLUPDATEINFO" Value="https://www.jonmcgee.online/apps/pixelwright/" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/GH_OWNER/pixelwright/issues" />
+
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="Pixelwright" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+
+    <Feature Id="Main" Title="Pixelwright" Level="1">
+      <ComponentGroupRef Id="PixelwrightFiles" />
+    </Feature>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="PixelwrightFiles" Directory="INSTALLFOLDER">
+      <Component Id="PixelwrightApp" Guid="A6DE41B7-A80F-4C59-A17E-BB68065BF67E">
+        <File Id="PixelwrightExe" Source="$(var.BinDir)\pixelwright.exe" KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut" Directory="ProgramMenuFolder" Name="Pixelwright"
+              Description="Pixelwright image editor" WorkingDirectory="INSTALLFOLDER" Advertise="yes"
+              Icon="PixelwrightIcon.exe" IconIndex="0" />
+        </File>
+
+        <!-- .pxwr: Pixelwright's own format; Pixelwright is its default app. -->
+        <ProgId Id="Pixelwright.Document" Description="Pixelwright Document" Icon="PixelwrightExe" IconIndex="0">
+          <Extension Id="pxwr" ContentType="application/x-pixelwright">
+            <Verb Id="open" Command="Open" TargetFile="PixelwrightExe" Argument="&quot;%1&quot;" />
+          </Extension>
+        </ProgId>
+        <!-- PSD/PSB and images: offered under "Open with", never forced as the default. -->
+        <ProgId Id="Pixelwright.PhotoshopDocument" Description="Photoshop Document" Icon="PixelwrightExe" IconIndex="0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Pixelwright.PhotoshopDocument\shell\open\command" Value="&quot;[#PixelwrightExe]&quot; &quot;%1&quot;" Type="string" />
+        <ProgId Id="Pixelwright.Image" Description="Image" Icon="PixelwrightExe" IconIndex="0" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Pixelwright.Image\shell\open\command" Value="&quot;[#PixelwrightExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.psd\OpenWithProgids" Name="Pixelwright.PhotoshopDocument" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.psb\OpenWithProgids" Name="Pixelwright.PhotoshopDocument" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.png\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.jpg\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.jpeg\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.tif\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.tiff\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.webp\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.gif\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.bmp\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.tga\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.exr\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.hdr\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.avif\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.qoi\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\.ico\OpenWithProgids" Name="Pixelwright.Image" Value="" Type="string" />
+
+        <!-- "Open with" app list and the Run dialog (Win+R "pixelwright"). -->
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe" Name="FriendlyAppName" Value="Pixelwright" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\shell\open\command" Value="&quot;[#PixelwrightExe]&quot; &quot;%1&quot;" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".pxwr" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".psd" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".psb" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".png" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".jpg" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".jpeg" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".tif" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".tiff" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".webp" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".gif" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".bmp" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".tga" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".exr" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".hdr" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".avif" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".qoi" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Classes\Applications\pixelwright.exe\SupportedTypes" Name=".ico" Value="" Type="string" />
+        <RegistryValue Root="HKLM" Key="Software\Microsoft\Windows\CurrentVersion\App Paths\pixelwright.exe" Value="[#PixelwrightExe]" Type="string" />
+      </Component>
+
+      <Component Id="PixelwrightCli">
+        <File Id="PixelwrightCliExe" Source="$(var.BinDir)\pixelwright-cli.exe" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

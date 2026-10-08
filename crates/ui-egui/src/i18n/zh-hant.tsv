@@ -14,7 +14,7 @@
 # Clean-room: every entry was written from the plain meaning of the English label using the
 # image-editing vocabulary in everyday use in Taiwan (圖層, 遮色片, 選取範圍, 濾鏡, 色階 ...). No
 # proprietary localisation resource, string table or product UI was consulted or copied; add
-# entries the same way. Product and technology names (PhotoCraft, ArtCraft, OpenType, CMYK, Lab ...)
+# entries the same way. Product and technology names (Pixelwright, OpenType, CMYK, Lab ...)
 # and paper sizes (Legal, Tabloid) stay in Latin letters; the trailing "…" of dialog commands is
 # kept. Full-width punctuation (，。：) inside sentences; half-width parentheses and the " · "
 # separators as in the English.
@@ -701,11 +701,9 @@
 	Timeline	時間軸
 	Tool Presets	工具預設集
 	Tools	工具
-	About PhotoCraft	關於 PhotoCraft
-	PhotoCraft Website	PhotoCraft 網站
-	PhotoCraft on GitHub	GitHub 上的 PhotoCraft
-	ArtCraft Website	ArtCraft 網站
-	Join the ArtCraft Discord…	加入 ArtCraft Discord…
+	About Pixelwright	關於 Pixelwright
+	Pixelwright Website	Pixelwright 網站
+	Pixelwright on GitHub	GitHub 上的 Pixelwright
 	Report an Issue…	回報問題…
 	WIA Support…	WIA 支援…
 	Apply	套用
@@ -961,7 +959,6 @@
 	Diffusion	擴散
 	Discard the embedded profile (don't color manage)	捨棄嵌入的描述檔 (不進行色彩管理)
 	Discontiguous	不連續
-	Discord	Discord
 	Dismiss	關閉
 	Display P3	Display P3
 	Display Text	顯示文字
@@ -980,7 +977,7 @@
 	Draw with the Pen tool (P) or make a work path from a selection.	使用筆型工具 (P) 繪製，或從選取範圍建立工作路徑。
 	Drop an image or PSD anywhere to open it.	將影像或 PSD 拖放到任何位置即可開啟。
 	Native file drag-and-drop is unavailable	Wayland 不支援原生檔案拖放
-	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run PhotoCraft under XWayland with `WAYLAND_DISPLAY= photocraft`.	Wayland 尚未支援原生檔案拖放。請使用「檔案 › 開啟」，或透過 `WAYLAND_DISPLAY= photocraft` 在 XWayland 下執行 PhotoCraft。
+	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run Pixelwright under XWayland with `WAYLAND_DISPLAY= pixelwright`.	Wayland 尚未支援原生檔案拖放。請使用「檔案 › 開啟」，或透過 `WAYLAND_DISPLAY= pixelwright` 在 XWayland 下執行 Pixelwright。
 	Duplicate Layers…	複製圖層…
 	Duplicate style	複製樣式
 	Edit Toolbar…	編輯工具列…
@@ -1089,7 +1086,6 @@
 	Invert All	全部反轉
 	Invert has no settings.	負片效果沒有設定。
 	Italic	斜體
-	Join us on Discord	加入我們的 Discord
 	Justify all	全部齊行
 	Justify last centered	最後一行置中齊行
 	Justify last left	最後一行靠左齊行
@@ -1225,9 +1221,9 @@
 	Perspective Warp is not active	透視彎曲未啟用
 	Perspective Warp: draw planes along the image's perspective, then switch to Warp	透視彎曲：沿影像透視繪製平面，然後切換到彎曲
 	Photo Filter	相片濾鏡
-	PhotoCraft	PhotoCraft
-	PhotoCraft Manages Colors	PhotoCraft 管理色彩
-	PhotoCraft — an open-source, native image editor written in Rust.	PhotoCraft — 以 Rust 撰寫的開放原始碼原生影像編輯器。
+	Pixelwright	Pixelwright
+	Pixelwright Manages Colors	Pixelwright 管理色彩
+	Pixelwright — an open-source, native image editor written in Rust.	Pixelwright — 以 Rust 撰寫的開放原始碼原生影像編輯器。
 	Pin Depth:	圖釘深度：
 	Pixel Length:	像素長度：
 	Pixels/Centimeter	像素/公分
@@ -1474,7 +1470,6 @@
 	Apple Watch 45mm	Apple Watch 45mm
 	Aqua	水藍色
 	Art & Illustration	藝術與插畫
-	ArtCraft	ArtCraft
 	Background Eraser Tool	背景橡皮擦工具
 	Bevel & Emboss	斜角和浮雕
 	Blend Mode	混合模式
@@ -1610,7 +1605,7 @@
 	Pen Tilt	筆傾斜
 	Pen Tool	筆型工具
 	Photo	相片
-	PhotoCraft website	PhotoCraft 網站
+	Pixelwright website	Pixelwright 網站
 	Picas	派卡
 	Pillow Emboss	枕狀浮雕
 	Pixel Replacement	像素取代
@@ -1922,7 +1917,7 @@
 	System Info…	系統資訊…
 	System Info	系統資訊
 	More panels	更多面板
-	These settings aren't available in PhotoCraft yet.	這些設定在 PhotoCraft 中尚未提供。
+	These settings aren't available in Pixelwright yet.	這些設定在 Pixelwright 中尚未提供。
 	Graphics	圖形
 	Reset GPU Backend	重設 GPU 後端
 	Applies at next launch.	下次啟動時套用。
@@ -2017,7 +2012,7 @@
 	Automatic uses GPU acceleration when available and falls back to CPU rendering on errors.	自動模式會在可用時使用 GPU 加速，發生錯誤時改用 CPU 渲染。
 	Switched to CPU rendering	已改用 CPU 渲染
 	GPU acceleration could not continue. Your documents are unchanged.	GPU 加速無法繼續。您的文件未變更。
-	PhotoCraft is using the CPU image compositor. The window may still use your graphics adapter.	PhotoCraft 正使用 CPU 合成影像。視窗仍可能使用您的顯示卡。
+	Pixelwright is using the CPU image compositor. The window may still use your graphics adapter.	Pixelwright 正使用 CPU 合成影像。視窗仍可能使用您的顯示卡。
 	Retry GPU requires a restart. Save your work first.	重試 GPU 需要重新啟動。請先儲存您的工作。
 	Keep Using CPU	繼續使用 CPU
 	Retry GPU	重試 GPU
@@ -2110,3 +2105,5 @@ cameraRaw	Blending	混合
 	% of all commits	佔全部提交的 %
 	Lines +/−	行數 +/−
 	@{login}: {prs} PRs, {commits} commits, +{added} / −{deleted} lines (Δ {delta}), +{binAdded} / −{binDeleted} binary assets, {first} – {last}	@{login}：{prs} 個 PR，{commits} 次提交，行 +{added} / −{deleted}（Δ {delta}），二進位檔 +{binAdded} / −{binDeleted}，{first} – {last}
+	Based on PhotoCraft…	基於 PhotoCraft…
+	Based on PhotoCraft	基於 PhotoCraft

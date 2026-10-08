@@ -4,10 +4,10 @@
 //! Delete Hidden / Empty Layers, Ungroup, Hide/Show Layers, Show Only This Layer (⌥-click an eye),
 //! Average and Clouds.
 
-use photocraft_algo::selection as sel;
-use photocraft_doc::{Document, Layer, LayerContent, LayerId, LayerMask};
-use photocraft_geom::Rect;
-use photocraft_raster::{from_rgba_into, to_rgba};
+use pixelwright_algo::selection as sel;
+use pixelwright_doc::{Document, Layer, LayerContent, LayerId, LayerMask};
+use pixelwright_geom::Rect;
+use pixelwright_raster::{from_rgba_into, to_rgba};
 use serde_json::{Value, json};
 
 use crate::commands::{CommandSpec, color_param, layer_param};
@@ -282,7 +282,7 @@ fn transform_preset(s: &mut Session, kind: &str) -> Result<Value> {
 
 // ---------- selection / clipboard ----------
 
-fn reselect_target(s: &Session) -> Option<photocraft_raster::Surface> {
+fn reselect_target(s: &Session) -> Option<pixelwright_raster::Surface> {
     let d = s.active()?;
     if d.doc.selection.is_some() {
         return None;
@@ -315,7 +315,7 @@ fn paste_into(s: &mut Session, p: &Value, outside: bool) -> Result<Value> {
             // Everything but the selection: default reveal, the selection's area inverted.
             let area = b.intersect(&canvas);
             let inv: Vec<f32> = sel::mask_from_surface(Some(&selection), area).iter().map(|v| 1.0 - v).collect();
-            let mut m = photocraft_raster::Surface::with_default(photocraft_color::PixelFormat::GRAY8, &[1.0]);
+            let mut m = pixelwright_raster::Surface::with_default(pixelwright_color::PixelFormat::GRAY8, &[1.0]);
             m.write_region(area, &inv);
             m
         } else {
@@ -349,7 +349,7 @@ fn unlock_background(l: &mut Layer) {
 
 /// Before `id` gets a layer mask: the Background can't have one, so it becomes a normal layer
 /// first ("Layer 0"), as when adding a mask to it in Photoshop. Other layers are left alone.
-pub(crate) fn background_to_layer_for_mask(doc: &mut photocraft_doc::Document, id: photocraft_doc::LayerId) {
+pub(crate) fn background_to_layer_for_mask(doc: &mut pixelwright_doc::Document, id: pixelwright_doc::LayerId) {
     if let Some(l) = doc.layers.first_mut().filter(|l| l.id == id && is_background(l)) {
         unlock_background(l);
     }
@@ -500,25 +500,25 @@ fn show_only(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Pixels of a fill or smart-object layer's content alone (no mask, effects or opacity).
-fn content_pixels(doc: &Document, l: &Layer) -> photocraft_raster::Surface {
+fn content_pixels(doc: &Document, l: &Layer) -> pixelwright_raster::Surface {
     let mut tmp = l.clone();
     tmp.mask = None;
     tmp.vector_mask = None;
     tmp.effects.items.clear();
     tmp.opacity = 1.0;
     tmp.fill_opacity = 1.0;
-    tmp.blend = photocraft_color::BlendMode::Normal;
+    tmp.blend = pixelwright_color::BlendMode::Normal;
     tmp.clipped = false;
     tmp.visible = true;
     let canvas = doc.bounds();
-    let buf = photocraft_compose::render_layer(&tmp, canvas);
+    let buf = pixelwright_compose::render_layer(&tmp, canvas);
     let fmt = doc.pixel_format();
     let n = fmt.channels();
     let mut data = vec![0.0f32; buf.px.len() * n];
     for (p, out) in buf.px.iter().zip(data.chunks_exact_mut(n)) {
         from_rgba_into(&fmt, *p, out);
     }
-    let mut s = photocraft_raster::Surface::new(fmt);
+    let mut s = pixelwright_raster::Surface::new(fmt);
     s.write_region(canvas, &data);
     s.prune();
     s

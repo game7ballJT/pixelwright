@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Pixelwright</title>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0e1233"/><stop offset="1" stop-color="#3b6cff"/></linearGradient>
+  <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.16"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#sheen)"/>
+  <rect x="110" y="79" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="186" y="79" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="262" y="79" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="110" y="155" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="338" y="155" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="110" y="231" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="186" y="231" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="262" y="231" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="110" y="307" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="110" y="383" width="64" height="64" rx="14" fill="#000" fill-opacity="0.28"/>
+  <rect x="110" y="72" width="64" height="64" rx="14" fill="#f4f1e8"/>
+  <rect x="186" y="72" width="64" height="64" rx="14" fill="#f4f1e8"/>
+  <rect x="262" y="72" width="64" height="64" rx="14" fill="#f4f1e8"/>
+  <rect x="110" y="148" width="64" height="64" rx="14" fill="#f4f1e8"/>
+  <rect x="338" y="148" width="64" height="64" rx="14" fill="#ffb02e"/>
+  <rect x="110" y="224" width="64" height="64" rx="14" fill="#f4f1e8"/>
+  <rect x="186" y="224" width="64" height="64" rx="14" fill="#f4f1e8"/>
+  <rect x="262" y="224" width="64" height="64" rx="14" fill="#f4f1e8"/>
+  <rect x="110" y="300" width="64" height="64" rx="14" fill="#f4f1e8"/>
+  <rect x="110" y="376" width="64" height="64" rx="14" fill="#f4f1e8"/>
+</svg>

@@ -2,8 +2,8 @@
 
 mod common;
 use common::*;
-use photocraft_color::{ColorMode, SampleType};
-use photocraft_format::*;
+use pixelwright_color::{ColorMode, SampleType};
+use pixelwright_format::*;
 use proptest::prelude::*;
 use std::io::Read;
 
@@ -142,7 +142,7 @@ fn total_size_limit() {
 fn directory_bundle_resave_repairs_tampered_objects() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("tamper");
-    let mut writer = PcraftWriter::new();
+    let mut writer = PxwrWriter::new();
     writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
 
     for object_dir in ["tiles", "blobs"] {
@@ -200,7 +200,7 @@ fn damage_in_place_keeping_size_and_mtime(dir: &std::path::Path) -> std::path::P
 fn same_size_same_mtime_tamper_is_repaired_on_the_next_save() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("tamper-same-size");
-    let mut writer = PcraftWriter::new();
+    let mut writer = PxwrWriter::new();
     writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
     // A second save trusts every object it verified in the first one.
     writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
@@ -218,7 +218,7 @@ fn same_size_same_mtime_tamper_is_repaired_on_the_next_save() {
 fn rolling_reverify_reaches_every_object_with_a_tiny_budget() {
     let doc = rich_doc(ColorMode::Rgb, SampleType::U8);
     let dir = temp_dir("tamper-rolling");
-    let mut writer = PcraftWriter::new();
+    let mut writer = PxwrWriter::new();
     writer.save_dir(&doc, &dir, &SaveOptions::default()).unwrap();
     let objects = ["tiles", "blobs"].iter().map(|d| std::fs::read_dir(dir.join(d)).unwrap().count()).sum::<usize>();
 
@@ -238,7 +238,7 @@ fn rolling_reverify_reaches_every_object_with_a_tiny_budget() {
 
     // A zero budget re-reads nothing whose signature is unchanged; a fresh writer still verifies
     // everything on its first save.
-    let mut fresh = PcraftWriter::new();
+    let mut fresh = PxwrWriter::new();
     fresh.set_reverify_budget(0);
     damage_in_place_keeping_size_and_mtime(&dir);
     assert_eq!(fresh.save_dir(&doc, &dir, &SaveOptions::default()).unwrap().tiles_written, 1);
@@ -294,7 +294,7 @@ fn deflated_zip_entries_are_readable() {
     assert_eq!(load_from_bytes(&out).unwrap(), rich_doc_ids_from(&b));
 }
 
-fn rich_doc_ids_from(b: &[u8]) -> photocraft_doc::Document {
+fn rich_doc_ids_from(b: &[u8]) -> pixelwright_doc::Document {
     load_from_bytes(b).unwrap()
 }
 

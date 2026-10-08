@@ -1,5 +1,5 @@
 # Release pipeline: every push to `release` builds signed installers for every platform and
-# creates or updates the draft GitHub Release "PhotoCraft v<version>". See docs/releasing.md.
+# creates or updates the draft GitHub Release "Pixelwright v<version>". See docs/releasing.md.
 #
 # All jobs run in the `release` environment (restricted to the `release` branch), which holds
 # the signing secrets. Every secret is optional: missing ones produce unsigned artifacts and a
@@ -28,7 +28,7 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   RUST_BACKTRACE: 1
-  PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
+  PIXELWRIGHT_BUILD_SHA: ${{ github.sha }}
   INPUT_VERSION: ${{ inputs.version }}
   # craft-fonts (https://github.com/storytold/craft-fonts): shared font assets every release
   # embeds (today the Japanese fonts). An optional build input for everyone else; see
@@ -62,7 +62,7 @@ jobs:
             echo "date=$(date -u +%Y-%m-%d)"
             echo "prerelease=$pre"
           } >>"$GITHUB_OUTPUT"
-          echo "### PhotoCraft v$v (\`${GITHUB_SHA::9}\`)" >>"$GITHUB_STEP_SUMMARY"
+          echo "### Pixelwright v$v (\`${GITHUB_SHA::9}\`)" >>"$GITHUB_STEP_SUMMARY"
 
   macos:
     name: macOS universal
@@ -70,8 +70,8 @@ jobs:
     runs-on: macos-15-xlarge  # M2 Pro larger runner; use only in release.yml (actions_macos_xl budget caps spend)
     environment: release
     env:
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PIXELWRIGHT_VERSION: ${{ needs.version.outputs.version }}
+      PIXELWRIGHT_BUILD_DATE: ${{ needs.version.outputs.date }}
     steps:
       - uses: actions/checkout@v4
       - name: Check out craft-fonts (embedded fonts)
@@ -88,7 +88,7 @@ jobs:
           key: release-macos-universal
       - name: Apply version override
         if: inputs.version != ''
-        run: cargo xtask version set "$PHOTOCRAFT_VERSION"
+        run: cargo xtask version set "$PIXELWRIGHT_VERSION"
       - name: Import signing certificate
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -137,8 +137,8 @@ jobs:
           # .github/workflows/windows-arm64.yml installs and runs it on ARM64 hardware.
           - { arch: arm64, target: aarch64-pc-windows-msvc }
     env:
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PIXELWRIGHT_VERSION: ${{ needs.version.outputs.version }}
+      PIXELWRIGHT_BUILD_DATE: ${{ needs.version.outputs.date }}
     steps:
       - uses: actions/checkout@v4
       - name: Check out craft-fonts (embedded fonts)
@@ -156,7 +156,7 @@ jobs:
       - name: Apply version override
         if: inputs.version != ''
         shell: bash
-        run: cargo xtask version set "$PHOTOCRAFT_VERSION"
+        run: cargo xtask version set "$PIXELWRIGHT_VERSION"
       - name: Install WiX
         shell: pwsh
         run: dotnet tool install --global wix --version 5.0.2
@@ -194,8 +194,8 @@ jobs:
           - { arch: x86_64, runner: ubuntu-22.04, deb: amd64 }
           - { arch: aarch64, runner: ubuntu-22.04-arm, deb: arm64 }
     env:
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PIXELWRIGHT_VERSION: ${{ needs.version.outputs.version }}
+      PIXELWRIGHT_BUILD_DATE: ${{ needs.version.outputs.date }}
       NFPM_VERSION: 2.47.0
     steps:
       - uses: actions/checkout@v4
@@ -220,7 +220,7 @@ jobs:
           key: release-linux-${{ matrix.arch }}
       - name: Apply version override
         if: inputs.version != ''
-        run: cargo xtask version set "$PHOTOCRAFT_VERSION"
+        run: cargo xtask version set "$PIXELWRIGHT_VERSION"
       - name: Build and package (AppImage, deb, rpm, tar.gz)
         env:
           CRAFT_FONTS_DIR: ${{ github.workspace }}/craft-fonts
@@ -229,9 +229,9 @@ jobs:
       - name: Check the packages
         run: |
           dpkg-deb --info dist/release/*.deb
-          dpkg-deb --contents dist/release/*.deb | grep -E 'usr/bin/photocraft$|metainfo|applications'
-          ldd target/release/photocraft
-          python3 -c "import yaml; m = yaml.safe_load(open('packaging/linux/flatpak/ai.storyteller.photocraft.yml')); assert m['id'] == 'ai.storyteller.photocraft'"
+          dpkg-deb --contents dist/release/*.deb | grep -E 'usr/bin/pixelwright$|metainfo|applications'
+          ldd target/release/pixelwright
+          python3 -c "import yaml; m = yaml.safe_load(open('packaging/linux/flatpak/online.jonmcgee.pixelwright.yml')); assert m['id'] == 'online.jonmcgee.pixelwright'"
           for appimage in dist/release/*.AppImage; do
             chmod +x "$appimage"
             APPIMAGE_EXTRACT_AND_RUN=1 "$appimage" --version
@@ -259,8 +259,8 @@ jobs:
           - { arch: x86_64, runner: ubuntu-24.04 }
           - { arch: aarch64, runner: ubuntu-24.04-arm }
     env:
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PIXELWRIGHT_VERSION: ${{ needs.version.outputs.version }}
+      PIXELWRIGHT_BUILD_DATE: ${{ needs.version.outputs.date }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -276,7 +276,7 @@ jobs:
           # Ubuntu 24.04's AppArmor blocks the unprivileged user namespaces bubblewrap needs.
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Build the Flatpak bundle
-        run: packaging/linux/flatpak-bundle.sh "dist/linux/photocraft-$PHOTOCRAFT_VERSION-linux-${{ matrix.arch }}.tar.gz"
+        run: packaging/linux/flatpak-bundle.sh "dist/linux/pixelwright-$PIXELWRIGHT_VERSION-linux-${{ matrix.arch }}.tar.gz"
       - uses: actions/upload-artifact@v4
         with:
           name: release-flatpak-${{ matrix.arch }}
@@ -292,8 +292,8 @@ jobs:
     timeout-minutes: 180
     # No `environment: release`: this job signs nothing, so it gets no release secrets.
     env:
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PIXELWRIGHT_VERSION: ${{ needs.version.outputs.version }}
+      PIXELWRIGHT_BUILD_DATE: ${{ needs.version.outputs.date }}
     steps:
       - uses: actions/checkout@v4
       - name: Check out craft-fonts (embedded fonts)
@@ -311,7 +311,7 @@ jobs:
           cpu: 4
           mem: 12288
           # Passed into the VM by name; never templated into the script below.
-          envs: "PHOTOCRAFT_VERSION PHOTOCRAFT_BUILD_DATE PHOTOCRAFT_BUILD_SHA INPUT_VERSION"
+          envs: "PIXELWRIGHT_VERSION PIXELWRIGHT_BUILD_DATE PIXELWRIGHT_BUILD_SHA INPUT_VERSION"
           # The FreeBSD CI packages, plus bash for the packaging script.
           prepare: |
             pkg install -y bash git curl pkgconf cmake python3 libxkbcommon wayland libX11 libXcursor libXrandr libXi libxcb mesa-libs vulkan-loader gtk3 fontconfig freetype2 alsa-lib
@@ -322,13 +322,13 @@ jobs:
             git config --global --add safe.directory "$PWD"
             # Build outside the checkout so only dist/ is copied back out of the VM (copying the
             # target dir back fails on large builds). 4 jobs: more runs the VM out of memory.
-            export CARGO_TARGET_DIR=/var/tmp/photocraft-target CARGO_BUILD_JOBS=4
-            if [ -n "$INPUT_VERSION" ]; then cargo xtask version set "$PHOTOCRAFT_VERSION"; fi
+            export CARGO_TARGET_DIR=/var/tmp/pixelwright-target CARGO_BUILD_JOBS=4
+            if [ -n "$INPUT_VERSION" ]; then cargo xtask version set "$PIXELWRIGHT_VERSION"; fi
             # craft-fonts was checked out next to the sources and synced into the VM with them.
             export CRAFT_FONTS_DIR="$PWD/craft-fonts" CRAFT_FONTS_REQUIRED=1
             bash packaging/freebsd/package.sh
-            tar -tzf dist/release/photocraft-*-freebsd-x86_64.tar.gz \
-              | grep -E '/bin/photocraft$|/bin/photocraft-cli$|/share/applications/ai\.storyteller\.photocraft\.desktop$|/share/doc/photocraft/LICENSE-MIT$'
+            tar -tzf dist/release/pixelwright-*-freebsd-x86_64.tar.gz \
+              | grep -E '/bin/pixelwright$|/bin/pixelwright-cli$|/share/applications/online\.jonmcgee\.pixelwright\.desktop$|/share/doc/pixelwright/LICENSE-MIT$'
       - uses: actions/upload-artifact@v4
         with:
           name: release-freebsd-x86_64
@@ -341,8 +341,8 @@ jobs:
     runs-on: ubuntu-latest
     # No `environment: release`: this job reads no secrets, so a branch dry run can run it.
     env:
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PIXELWRIGHT_VERSION: ${{ needs.version.outputs.version }}
+      PIXELWRIGHT_BUILD_DATE: ${{ needs.version.outputs.date }}
       TRUNK_VERSION: 0.21.14
     steps:
       - uses: actions/checkout@v4
@@ -359,7 +359,7 @@ jobs:
           trunk --version
       - name: Apply version override
         if: inputs.version != ''
-        run: cargo xtask version set "$PHOTOCRAFT_VERSION"
+        run: cargo xtask version set "$PIXELWRIGHT_VERSION"
       # No craft-fonts here: the wasm32 build never embeds it (crates/text/build.rs), since even
       # one Japanese font takes the wasm over packaging/web/package.sh's 24 MiB gate.
       - name: Build and zip
@@ -396,7 +396,7 @@ jobs:
         working-directory: artifacts
         run: |
           tag="v$VERSION"
-          title="PhotoCraft v$VERSION"
+          title="Pixelwright v$VERSION"
           pre=()
           if [ "$PRERELEASE" = true ]; then pre=(--prerelease); fi
           if draft="$(gh release view "$tag" --json isDraft --jq .isDraft 2>/dev/null)"; then

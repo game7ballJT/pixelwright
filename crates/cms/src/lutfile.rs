@@ -227,7 +227,7 @@ fn smooth(x: f32) -> f32 {
     x * x * (3.0 - 2.0 * x)
 }
 
-/// Generated looks shipped with Photocraft (procedural, CC0): `(id, label)`.
+/// Generated looks shipped with Pixelwright (procedural, CC0): `(id, label)`.
 pub const BUILTIN: [(&str, &str); 8] = [
     ("warm", "Warm Filter"),
     ("cool", "Cool Filter"),

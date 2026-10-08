@@ -2,8 +2,8 @@
 //! behaviour, intents, BPC, interpolation accuracy, real-world profiles and an independent
 //! oracle (moxcms, dev-dependency only).
 
-use photocraft_cms::math::{self, delta_e76};
-use photocraft_cms::{Builtin, Clut, ColorSpace, Intent, Lut3d, Profile, Transform, TransformOptions};
+use pixelwright_cms::math::{self, delta_e76};
+use pixelwright_cms::{Builtin, Clut, ColorSpace, Intent, Lut3d, Profile, Transform, TransformOptions};
 
 fn lab() -> &'static Profile {
     Builtin::LabD50.profile()
@@ -226,10 +226,10 @@ fn intents_differ_as_expected() {
 
 #[test]
 fn black_point_compensation() {
-    let bp = photocraft_cms::black_point(cmyk(), Intent::RelativeColorimetric, false).unwrap();
+    let bp = pixelwright_cms::black_point(cmyk(), Intent::RelativeColorimetric, false).unwrap();
     let bl = math::xyz_to_lab([bp * 0.9642, bp, bp * 0.8249], math::D50)[0];
     assert!(bl > 4.0 && bl < 20.0, "CMYK black L* {bl}");
-    assert_eq!(photocraft_cms::black_point(srgb(), Intent::RelativeColorimetric, true).unwrap(), 0.0);
+    assert_eq!(pixelwright_cms::black_point(srgb(), Intent::RelativeColorimetric, true).unwrap(), 0.0);
     // sRGB → CMYK: without BPC, deep shadows below the paper's black clip together; with BPC
     // they stay distinct.
     let with = Transform::new(srgb(), cmyk(), Intent::RelativeColorimetric, true).unwrap();
@@ -414,10 +414,10 @@ fn system_profiles() {
             seen += 1;
             if !matches!(
                 p.class,
-                photocraft_cms::ProfileClass::Input
-                    | photocraft_cms::ProfileClass::Display
-                    | photocraft_cms::ProfileClass::Output
-                    | photocraft_cms::ProfileClass::ColorSpace
+                pixelwright_cms::ProfileClass::Input
+                    | pixelwright_cms::ProfileClass::Display
+                    | pixelwright_cms::ProfileClass::Output
+                    | pixelwright_cms::ProfileClass::ColorSpace
             ) {
                 continue;
             }
@@ -594,8 +594,8 @@ fn gray_profile_with_reversed_lut_type_reencodes() {
 /// sRGB the way Photoshop embeds it: a v2 profile whose TRCs are 1024-entry 16-bit tables.
 fn srgb_as_v2_tables() -> Profile {
     let mut p = srgb().clone();
-    let table = |c: &photocraft_cms::Curve| {
-        photocraft_cms::Curve::Table((0..1024).map(|i| ((c.eval64(i as f64 / 1023.0) * 65535.0).round() / 65535.0) as f32).collect())
+    let table = |c: &pixelwright_cms::Curve| {
+        pixelwright_cms::Curve::Table((0..1024).map(|i| ((c.eval64(i as f64 / 1023.0) * 65535.0).round() / 65535.0) as f32).collect())
     };
     let trc = p.trc.clone().unwrap();
     p.trc = Some([table(&trc[0]), table(&trc[1]), table(&trc[2])]);

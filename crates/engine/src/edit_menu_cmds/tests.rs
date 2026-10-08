@@ -1,5 +1,5 @@
 use super::*;
-use photocraft_doc::vector::Subpath;
+use pixelwright_doc::vector::Subpath;
 
 fn session(depth: u32) -> Session {
     let mut s = Session::new();

@@ -2,8 +2,8 @@
 //! options bar "Auto-Select: Layer | Group", ⌘-click with the Move tool, and the canvas right-click
 //! layer list).
 
-use photocraft_doc::{Document, LayerContent, LayerId};
-use photocraft_geom::Rect;
+use pixelwright_doc::{Document, LayerContent, LayerId};
+use pixelwright_geom::Rect;
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;

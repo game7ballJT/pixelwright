@@ -3,22 +3,22 @@
 //!
 //! All three take their whole edit as data, so each is one replayable command and one history
 //! step: Liquify the brush strokes (replayed onto a fresh displacement field,
-//! `photocraft_algo::liquify`), Puppet Warp the pins (`photocraft_algo::puppet`, ARAP on a mesh
-//! of the opaque region), Perspective Warp the planes (`photocraft_algo::perspective`). On a
+//! `pixelwright_algo::liquify`), Puppet Warp the pins (`pixelwright_algo::puppet`, ARAP on a mesh
+//! of the opaque region), Perspective Warp the planes (`pixelwright_algo::perspective`). On a
 //! smart object each becomes a smart filter (as in Photoshop): the params are stored with the
 //! smart object and re-applied to a fresh render of the source, so editing never accumulates
 //! resampling. The params are the data in every case (strokes, pins and planes are small
 //! compared with a field or a mesh, and replay is deterministic), so nothing needs a blob.
 
-use photocraft_algo::liquify::{LiquifyField, LiquifyStroke, apply_liquify, auto_cell};
-use photocraft_algo::perspective::{PerspectiveMap, Plane, Straighten, straighten};
-use photocraft_algo::puppet::{PuppetDensity, PuppetMode, PuppetPin, PuppetWarp, puppet_warp};
-use photocraft_algo::transform::Interp;
-use photocraft_algo::warp::{warp_mesh_gray, warp_mesh_surface};
-use photocraft_color::PixelFormat;
-use photocraft_doc::{Document, Layer, LayerContent, LayerId, Locks, SmartFilter};
-use photocraft_geom::Rect;
-use photocraft_raster::Surface;
+use pixelwright_algo::liquify::{LiquifyField, LiquifyStroke, apply_liquify, auto_cell};
+use pixelwright_algo::perspective::{PerspectiveMap, Plane, Straighten, straighten};
+use pixelwright_algo::puppet::{PuppetDensity, PuppetMode, PuppetPin, PuppetWarp, puppet_warp};
+use pixelwright_algo::transform::Interp;
+use pixelwright_algo::warp::{warp_mesh_gray, warp_mesh_surface};
+use pixelwright_color::PixelFormat;
+use pixelwright_doc::{Document, Layer, LayerContent, LayerId, Locks, SmartFilter};
+use pixelwright_geom::Rect;
+use pixelwright_raster::Surface;
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;
@@ -252,7 +252,7 @@ fn run_on_layer(
         let group = crate::transform_cmds::group_locks(doc, id);
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
         if let LayerContent::Smart(_) = l.content {
-            let sf = SmartFilter { command: cmd.to_string(), params: params.clone(), blend: photocraft_color::BlendMode::Normal, opacity: 1.0, visible: true };
+            let sf = SmartFilter { command: cmd.to_string(), params: params.clone(), blend: pixelwright_color::BlendMode::Normal, opacity: 1.0, visible: true };
             return crate::smart_cmds::add_smart_filter(doc, id, sf, selection.as_ref());
         }
         if moves {

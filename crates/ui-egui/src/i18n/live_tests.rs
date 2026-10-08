@@ -1,7 +1,7 @@
 //! Behavioural checks for switching languages in a running shell.
 
 use super::*;
-use crate::{PhotocraftApp, Services};
+use crate::{PixelwrightApp, Services};
 use serde_json::json;
 
 fn lang(code: &str) -> Lang {
@@ -76,7 +76,7 @@ fn dynamic_brush_sections_have_translations_and_draw_in_the_selected_language() 
 
 #[test]
 fn cjk_font_order_follows_the_selected_language() {
-    use photocraft_text::cjk::CjkScript;
+    use pixelwright_text::cjk::CjkScript;
     for (code, script) in [("zh-hans", CjkScript::SimplifiedChinese), ("ja", CjkScript::Japanese), ("ko", CjkScript::Korean)] {
         with_language(lang(code), || {
             let mut fallback = crate::cjk_fonts::CjkFallback::new(crate::cjk_fonts::Sources::system());
@@ -88,7 +88,7 @@ fn cjk_font_order_follows_the_selected_language() {
 #[cfg(not(target_arch = "wasm32"))]
 #[test]
 fn korean_glyphs_remain_available_after_repeated_language_switches() {
-    use photocraft_text::cjk::{self, CjkChar, CjkScript};
+    use pixelwright_text::cjk::{self, CjkChar, CjkScript};
     if !cjk::font_files(CjkScript::Korean).iter().any(|font| font.path.is_file()) {
         eprintln!("skipping: no installed Korean font");
         return;
@@ -113,14 +113,14 @@ fn korean_glyphs_remain_available_after_repeated_language_switches() {
     });
 }
 
-fn harness() -> egui_kittest::Harness<'static, PhotocraftApp> {
+fn harness() -> egui_kittest::Harness<'static, PixelwrightApp> {
     harness_with_services(Services::default())
 }
 
-fn harness_with_services(services: Services) -> egui_kittest::Harness<'static, PhotocraftApp> {
+fn harness_with_services(services: Services) -> egui_kittest::Harness<'static, PixelwrightApp> {
     let mut harness = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 800.0)).with_max_steps(64).build_eframe(move |cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
+        PixelwrightApp::setup_context(&cc.egui_ctx, Default::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), services);
         app.run("file.new", json!({"name": "User layer name", "width": 64, "height": 64})).expect("new document");
         app
     });
@@ -163,7 +163,7 @@ fn older_preferences_without_a_language_follow_the_system() {
             let services = Services { load_prefs: Some(Box::new(|| Some(r#"{"interface":{"uiScale":"125"}}"#.into()))), ..Default::default() };
             let h = harness_with_services(services);
             assert_eq!(h.state().session.prefs().interface.language, "auto");
-            assert_eq!(h.state().session.prefs().interface.ui_scale, photocraft_engine::prefs::UiScale::P125);
+            assert_eq!(h.state().session.prefs().interface.ui_scale, pixelwright_engine::prefs::UiScale::P125);
             assert_eq!(current(), lang("fr"));
         });
     });
@@ -238,7 +238,7 @@ fn preferences_preview_does_not_commit_until_applied_and_survives_reload() {
         h.step();
         assert_eq!(current(), lang("ko"));
         let saved = h.state().session.prefs_to_json();
-        let mut restored = photocraft_engine::Session::new();
+        let mut restored = pixelwright_engine::Session::new();
         restored.load_prefs_json(&saved).expect("reload preferences");
         assert_eq!(restored.prefs().interface.language, "ko");
     });
@@ -264,7 +264,7 @@ fn keyboard_shortcuts_list_commands_in_the_selected_language() {
     });
 }
 
-fn drawn_text(h: &egui_kittest::Harness<'_, PhotocraftApp>) -> Vec<String> {
+fn drawn_text(h: &egui_kittest::Harness<'_, PixelwrightApp>) -> Vec<String> {
     fn collect(shape: &egui::Shape, text: &mut Vec<String>) {
         match shape {
             egui::Shape::Text(shape) => text.push(shape.galley.job.text.clone()),

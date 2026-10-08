@@ -1,8 +1,8 @@
 //! Truncated and corrupted raw files must fail cleanly, never panic, and
 //! never allocate beyond the limits.
 
-use photocraft_raw::testgen::{Cr2Spec, DngSpec, DngStorage, mosaic, orf, rw2, scene, sony_craw, tiff_ep};
-use photocraft_raw::*;
+use pixelwright_raw::testgen::{Cr2Spec, DngSpec, DngStorage, mosaic, orf, rw2, scene, sony_craw, tiff_ep};
+use pixelwright_raw::*;
 
 fn samples() -> Vec<Vec<u8>> {
     let (w, h) = (24, 12);

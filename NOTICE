@@ -1,11 +1,16 @@
-PhotoCraft
-Copyright (c) 2026 ArtCraft Team and the PhotoCraft contributors.
-Licensed under the MIT License or the Apache License, Version 2.0, at your option
-(LICENSE-MIT, LICENSE-APACHE).
+Pixelwright
+Copyright (c) 2026 Jon McGee.
 
-The ArtCraft name, wordmark and logos in docs/brand/ are trademarks of the ArtCraft Team. They are
-not open source and are not covered by the license above; their terms are in
-docs/brand/LICENSE-brand.txt.
+Pixelwright is an independent, modified fork of PhotoCraft v0.5.0
+(https://github.com/storytold/photocraft), Copyright (c) 2026 ArtCraft Team and the PhotoCraft
+contributors. The original work is licensed under the MIT License or the Apache License,
+Version 2.0, at your option (LICENSE-MIT, LICENSE-APACHE), and Pixelwright's changes are offered
+under the same terms. The original authors keep their copyright; the commit history of this
+repository preserves their work, and contributors/ lists them.
+
+This fork is not affiliated with, sponsored by or endorsed by the ArtCraft Team. As the original
+project's brand license requires of forks, the ArtCraft name, wordmark and logos have been removed
+from Pixelwright; they are not part of this product and no right to them is granted here.
 
 Third-party material
 
@@ -17,7 +22,7 @@ JetBrains Mono font (assets/fonts/JetBrainsMono-Regular.ttf) — SIL Open Font L
 Lucide icons (assets/icons/*.svg, except slice-knife.svg) — ISC; icons derived from Feather also MIT. See assets/icons/LICENSE-lucide.txt.
 SCOWL English word list (assets/dict/en_US-scowl-50.txt.gz) — SCOWL license. See assets/dict/LICENSE-SCOWL.txt.
 
-Builds made with craft-fonts (CRAFT_FONTS_DIR; all official releases) also embed the fonts listed in
+Builds made with craft-fonts (CRAFT_FONTS_DIR) also embed the fonts listed in
 https://github.com/storytold/craft-fonts/blob/main/ATTRIBUTION.md (today BIZ UDPGothic, Shippori Mincho and
 BIZ UDMincho; not the web build), under the SIL Open Font License 1.1. Their licence texts
-ship with the package as OFL-<family>.txt.
+ship with the package as OFL-<family>.txt. The optional build input is not part of this repository.

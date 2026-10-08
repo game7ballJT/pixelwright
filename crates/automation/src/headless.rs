@@ -1,12 +1,12 @@
-//! Headless backend: a `photocraft_engine::Session` plus file I/O. Synchronous
+//! Headless backend: a `pixelwright_engine::Session` plus file I/O. Synchronous
 //! and UI-free; the MCP server and the CLI both drive it.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
-use photocraft_engine::{Session, command_specs, file_cmds};
-use photocraft_format::PcraftWriter;
-use photocraft_io::ExportOptions;
+use pixelwright_engine::{Session, command_specs, file_cmds};
+use pixelwright_format::PxwrWriter;
+use pixelwright_io::ExportOptions;
 use serde_json::{Value, json};
 
 use crate::workspace::{authorize_engine_command, authorize_engine_step};
@@ -27,8 +27,8 @@ enum Filesystem {
 /// A headless editing session.
 pub struct Headless {
     pub session: Session,
-    /// Incremental `.pcraft` writers per document id.
-    writers: HashMap<u64, PcraftWriter>,
+    /// Incremental `.pxwr` writers per document id.
+    writers: HashMap<u64, PxwrWriter>,
     filesystem: Filesystem,
 }
 
@@ -103,7 +103,7 @@ impl Headless {
         }))
     }
 
-    /// Save (`.pcraft` or any export format by extension). With no path,
+    /// Save (`.pxwr` or any export format by extension). With no path,
     /// saves to the document's own path.
     pub fn save(&mut self, index: Option<usize>, path: Option<&Path>, format: Option<&str>, opts: &ExportOptions) -> Result<Value, AutomationError> {
         let i = self.doc_index(index)?;
@@ -120,7 +120,7 @@ impl Headless {
                 let written = format.map(|f| f.trim_start_matches('.').to_ascii_lowercase()).or_else(|| own.clone());
                 if !file_cmds::saves_in_place(p) || written != own {
                     return Err(AutomationError::BadRequest(format!(
-                        "pass `path`: without one, only a PSD, PSB or .pcraft file is written back, in its own format, so `{p}` was left unchanged"
+                        "pass `path`: without one, only a PSD, PSB or .pxwr file is written back, in its own format, so `{p}` was left unchanged"
                     )));
                 }
                 PathBuf::from(p)
@@ -143,8 +143,8 @@ impl Headless {
             }
         };
         let is_native = format
-            .map(|f| f.trim_start_matches('.').eq_ignore_ascii_case("pcraft"))
-            .unwrap_or_else(|| target.extension().is_some_and(|e| e.eq_ignore_ascii_case("pcraft")));
+            .map(|f| f.trim_start_matches('.').eq_ignore_ascii_case("pxwr"))
+            .unwrap_or_else(|| target.extension().is_some_and(|e| e.eq_ignore_ascii_case("pxwr")));
         if is_native {
             self.session.set_active(i);
             if let Some(st) = self.session.active_mut() {
@@ -160,14 +160,14 @@ impl Headless {
         let requested = path.to_str().ok_or_else(|| AutomationError::BadRequest("automation paths must be valid UTF-8".into()))?;
         match &self.filesystem {
             Filesystem::Denied => Err(AutomationError::BadRequest("automation filesystem access is not granted: write authority is absent".into())),
-            Filesystem::TrustedLocal => photocraft_format::atomic_write(path, bytes).map_err(|error| AutomationError::Io(error.to_string())),
+            Filesystem::TrustedLocal => pixelwright_format::atomic_write(path, bytes).map_err(|error| AutomationError::Io(error.to_string())),
             Filesystem::Workspace(workspace) => workspace.write(requested, bytes),
         }
     }
 
     pub fn inspect(&self, index: Option<usize>) -> Result<Value, AutomationError> {
         let i = self.doc_index(index)?;
-        Ok(photocraft_engine::inspect::document(&self.session.documents()[i]))
+        Ok(pixelwright_engine::inspect::document(&self.session.documents()[i]))
     }
 
     pub fn render_png(&self, index: Option<usize>, max_side: u32) -> Result<Vec<u8>, AutomationError> {
@@ -184,7 +184,7 @@ impl Headless {
     }
 
     pub fn session_list(&self) -> Value {
-        photocraft_engine::inspect::session(&self.session)
+        pixelwright_engine::inspect::session(&self.session)
     }
 
     pub fn select(&mut self, index: usize) -> Result<Value, AutomationError> {
@@ -235,8 +235,8 @@ impl Headless {
             return Ok(self.session.execute(id, params)?);
         }
         Ok(match self.session.start(id, params)? {
-            photocraft_engine::jobs::Started::Done(v) => v,
-            photocraft_engine::jobs::Started::Job(job) => json!({"job": job.0, "pending": true}),
+            pixelwright_engine::jobs::Started::Done(v) => v,
+            pixelwright_engine::jobs::Started::Job(job) => json!({"job": job.0, "pending": true}),
         })
     }
 }

@@ -4,9 +4,9 @@
 //! channel thumbnails, histograms, file previews), where a full-resolution composite of a 200 MP
 //! document would cost seconds and gigabytes.
 
-use photocraft_doc::{Document, Layer, LayerContent, Size};
-use photocraft_geom::Rect;
-use photocraft_raster::Surface;
+use pixelwright_doc::{Document, Layer, LayerContent, Size};
+use pixelwright_geom::Rect;
+use pixelwright_raster::Surface;
 
 /// Nearest-neighbour downsample of a surface by integer factor `k` (document coordinates / k).
 pub fn downsample(s: &Surface, k: u32) -> Surface {
@@ -91,7 +91,7 @@ pub fn proxy_faithful(doc: &Document) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use photocraft_color::{Color, ColorMode, PixelFormat, SampleType};
+    use pixelwright_color::{Color, ColorMode, PixelFormat, SampleType};
 
     #[test]
     fn downsample_picks_every_kth_pixel() {

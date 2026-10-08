@@ -1,6 +1,6 @@
 # Command-line interface
 
-`apps/photocraft-cli` provides the following current subcommands:
+`apps/pixelwright-cli` provides the following current subcommands:
 
 | Command | Purpose |
 |---|---|
@@ -8,15 +8,15 @@
 | `info` | Print document size, mode, depth, and layer information as JSON |
 | `run` | Open or create a document, execute engine commands, and optionally save |
 | `batch` | Apply an action list to files in one input directory |
-| `droplet` | Run a PhotoCraft droplet against files or folders |
+| `droplet` | Run a Pixelwright droplet against files or folders |
 | `commands` | List command IDs and parameter documentation |
 | `mcp` | Start the MCP server on stdio, optionally bridged to the desktop app |
 | `serve` | Start the JSON-lines headless server on stdio or loopback TCP |
 
-Use `photocraft-cli --help` (or `photocraft-cli <subcommand> --help`) as the executable source of truth. A typical bounded command run is:
+Use `pixelwright-cli --help` (or `pixelwright-cli <subcommand> --help`) as the executable source of truth. A typical bounded command run is:
 
 ```sh
-photocraft-cli run input.psd \
+pixelwright-cli run input.psd \
   --cmd image.adjustments.invert \
   --out output.png
 ```

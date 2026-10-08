@@ -12,7 +12,7 @@
 # Clean-room: every entry was written from the plain meaning of the English label using ordinary
 # Brazilian Portuguese computing vocabulary (camada, desfoque, seleção, demarcador ...). No
 # proprietary localisation resource, string table or product UI was consulted or copied; add
-# entries the same way. Product and technology names (PhotoCraft, ArtCraft, OpenType, CMYK, Lab ...)
+# entries the same way. Product and technology names (Pixelwright, OpenType, CMYK, Lab ...)
 # stay as they are; the trailing "…" of dialog commands is kept.
 
 	File	Arquivo
@@ -682,11 +682,9 @@
 	Timeline	Linha do tempo
 	Tool Presets	Predefinições de ferramentas
 	Tools	Ferramentas
-	About PhotoCraft	Sobre o PhotoCraft
-	PhotoCraft Website	Site do PhotoCraft
-	PhotoCraft on GitHub	PhotoCraft no GitHub
-	ArtCraft Website	Site do ArtCraft
-	Join the ArtCraft Discord…	Participe do Discord do ArtCraft…
+	About Pixelwright	Sobre o Pixelwright
+	Pixelwright Website	Site do Pixelwright
+	Pixelwright on GitHub	Pixelwright no GitHub
 	Report an Issue…	Relatar um problema…
 	WIA Support…	Suporte a WIA…
 	Apply	Aplicar
@@ -944,7 +942,6 @@
 	Diffusion	Difusão
 	Discard the embedded profile (don't color manage)	Descartar o perfil incorporado (não gerenciar cores)
 	Discontiguous	Não contíguo
-	Discord	Discord
 	Dismiss	Dispensar
 	Display P3	Display P3
 	Display Text	Texto de exibição
@@ -1069,7 +1066,6 @@
 	Invert All	Inverter tudo
 	Invert has no settings.	Inverter não tem configurações.
 	Italic	Itálico
-	Join us on Discord	Participe do nosso Discord
 	Justify all	Justificar tudo
 	Justify last centered	Justificar com a última linha centralizada
 	Justify last left	Justificar com a última linha à esquerda
@@ -1205,9 +1201,9 @@
 	Perspective Warp is not active	A distorção de perspectiva não está ativa
 	Perspective Warp: draw planes along the image's perspective, then switch to Warp	Distorção de perspectiva: desenhe planos seguindo a perspectiva da imagem e depois mude para Deformar
 	Photo Filter	Filtro de fotos
-	PhotoCraft	PhotoCraft
-	PhotoCraft Manages Colors	O PhotoCraft gerencia as cores
-	PhotoCraft — an open-source, native image editor written in Rust.	PhotoCraft — um editor de imagens nativo e de código aberto escrito em Rust.
+	Pixelwright	Pixelwright
+	Pixelwright Manages Colors	O Pixelwright gerencia as cores
+	Pixelwright — an open-source, native image editor written in Rust.	Pixelwright — um editor de imagens nativo e de código aberto escrito em Rust.
 	Pin Depth:	Profundidade do alfinete:
 	Pixel Length:	Comprimento em pixels:
 	Pixels/Centimeter	Pixels/centímetro
@@ -1454,7 +1450,6 @@
 	Apple Watch 45mm	Apple Watch 45mm
 	Aqua	Aqua
 	Art & Illustration	Arte e ilustração
-	ArtCraft	ArtCraft
 	Background Eraser Tool	Ferramenta Borracha de plano de fundo
 	Bevel & Emboss	Chanfro e entalhe
 	Blend Mode	Modo de mesclagem
@@ -1589,7 +1584,7 @@
 	Pen Tilt	Inclinação da caneta
 	Pen Tool	Ferramenta Caneta
 	Photo	Foto
-	PhotoCraft website	Site do PhotoCraft
+	Pixelwright website	Site do Pixelwright
 	Picas	Paicas
 	Pillow Emboss	Entalhe almofadado
 	Pixel Replacement	Substituição de pixels
@@ -1898,7 +1893,7 @@
 	System Info…	Informações do sistema…
 	System Info	Informações do sistema
 	More panels	Mais painéis
-	These settings aren't available in PhotoCraft yet.	Estas configurações ainda não estão disponíveis no PhotoCraft.
+	These settings aren't available in Pixelwright yet.	Estas configurações ainda não estão disponíveis no Pixelwright.
 	Graphics	Gráficos
 	Reset GPU Backend	Redefinir backend da GPU
 	Applies at next launch.	Aplica-se na próxima inicialização.
@@ -2451,7 +2446,7 @@
 	Floating point	Ponto flutuante
 	Use Global Light	Usar luz global
 	Native file drag-and-drop is unavailable	Arrastar e soltar arquivos nativo indisponível
-	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run PhotoCraft under XWayland with `WAYLAND_DISPLAY= photocraft`.	Arrastar e soltar arquivos nativo ainda não é compatível com Wayland. Use Arquivo › Abrir ou execute o PhotoCraft no XWayland com `WAYLAND_DISPLAY= photocraft`.
+	Native file drag-and-drop is not supported on Wayland yet. Use File › Open, or run Pixelwright under XWayland with `WAYLAND_DISPLAY= pixelwright`.	Arrastar e soltar arquivos nativo ainda não é compatível com Wayland. Use Arquivo › Abrir ou execute o Pixelwright no XWayland com `WAYLAND_DISPLAY= pixelwright`.
 	Use File › Open to open an image.	Use Arquivo › Abrir para abrir uma imagem.
 	Mixer Brush Tool	Ferramenta Pincel misturador
 	Invalid {mode} profile	Perfil {mode} inválido
@@ -2464,7 +2459,7 @@
 	Automatic uses GPU acceleration when available and falls back to CPU rendering on errors.	O modo automático usa a aceleração por GPU quando disponível e volta para a renderização por CPU em caso de erros.
 	Switched to CPU rendering	Renderização alterada para CPU
 	GPU acceleration could not continue. Your documents are unchanged.	A aceleração por GPU não pôde continuar. Seus documentos não foram alterados.
-	PhotoCraft is using the CPU image compositor. The window may still use your graphics adapter.	O PhotoCraft está usando o compositor de imagens da CPU. A janela ainda pode usar seu adaptador gráfico.
+	Pixelwright is using the CPU image compositor. The window may still use your graphics adapter.	O Pixelwright está usando o compositor de imagens da CPU. A janela ainda pode usar seu adaptador gráfico.
 	Retry GPU requires a restart. Save your work first.	Tentar a GPU novamente exige reiniciar. Salve seu trabalho primeiro.
 	Keep Using CPU	Continuar usando a CPU
 	Retry GPU	Tentar a GPU novamente
@@ -2571,3 +2566,5 @@ cameraRaw	Whites	Brancos
 	% of all commits	% de todos os commits
 	Lines +/−	Linhas +/−
 	@{login}: {prs} PRs, {commits} commits, +{added} / −{deleted} lines (Δ {delta}), +{binAdded} / −{binDeleted} binary assets, {first} – {last}	@{login}: {prs} PRs, {commits} commits, +{added} / −{deleted} linhas (Δ {delta}), +{binAdded} / −{binDeleted} arquivos binários, {first} – {last}
+	Based on PhotoCraft…	Baseado no PhotoCraft…
+	Based on PhotoCraft	Baseado no PhotoCraft

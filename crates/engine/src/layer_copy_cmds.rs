@@ -8,9 +8,9 @@
 //! document. Pixels are converted to the destination's colour profile (Color Settings' intent and
 //! black point compensation) and bit depth, as Photoshop converts dragged layers.
 
-use photocraft_color::ColorMode;
-use photocraft_doc::{Document, LayerId};
-use photocraft_geom::Rect;
+use pixelwright_color::ColorMode;
+use pixelwright_doc::{Document, LayerId};
+use pixelwright_geom::Rect;
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;

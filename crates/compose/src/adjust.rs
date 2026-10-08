@@ -3,10 +3,10 @@
 //! Formulas are documented approximations of Photoshop behaviour. Exact matching is tuned in
 //! milestone M7 against Photoshop-rendered PSD composites (the oracle in `testkit`).
 
-use photocraft_color::SampleType;
-use photocraft_color::convert::{D50, SRGB_TO_XYZ_D50, XYZ_D50_TO_SRGB, mat3_mul, rgb_to_gray, srgb_to_linear};
-use photocraft_doc::Adjustment;
-use photocraft_doc::adjust::{CurvePoint, HueRange, LevelsChannel, ToneSpace};
+use pixelwright_color::SampleType;
+use pixelwright_color::convert::{D50, SRGB_TO_XYZ_D50, XYZ_D50_TO_SRGB, mat3_mul, rgb_to_gray, srgb_to_linear};
+use pixelwright_doc::Adjustment;
+use pixelwright_doc::adjust::{CurvePoint, HueRange, LevelsChannel, ToneSpace};
 
 use crate::Buffer;
 
@@ -27,12 +27,12 @@ impl Transfer {
     /// Default transfer for a document's colour mode and depth. 32-bit samples are linear, and
     /// Photoshop's Exposure works on them as stored (photoshop corpus rgb32 and gray32
     /// exposure.psd: within 0.5/255, against 69/255 through the 2.2 curve).
-    pub fn for_document(mode: photocraft_color::ColorMode, depth: photocraft_color::SampleType) -> Self {
-        if depth == photocraft_color::SampleType::F32 {
+    pub fn for_document(mode: pixelwright_color::ColorMode, depth: pixelwright_color::SampleType) -> Self {
+        if depth == pixelwright_color::SampleType::F32 {
             return Transfer::Gamma(1.0);
         }
         match mode {
-            photocraft_color::ColorMode::Grayscale | photocraft_color::ColorMode::Duotone | photocraft_color::ColorMode::Bitmap => Transfer::Gamma(1.732),
+            pixelwright_color::ColorMode::Grayscale | pixelwright_color::ColorMode::Duotone | pixelwright_color::ColorMode::Bitmap => Transfer::Gamma(1.732),
             _ => Transfer::Srgb,
         }
     }
@@ -47,13 +47,13 @@ impl Transfer {
     }
     fn decode(self, v: f32) -> f32 {
         match self {
-            Transfer::Srgb => photocraft_color::convert::srgb_to_linear(v.max(0.0)),
+            Transfer::Srgb => pixelwright_color::convert::srgb_to_linear(v.max(0.0)),
             Transfer::Gamma(g) => v.max(0.0).powf(g),
         }
     }
     fn encode(self, v: f32) -> f32 {
         match self {
-            Transfer::Srgb => photocraft_color::convert::linear_to_srgb(v.max(0.0)),
+            Transfer::Srgb => pixelwright_color::convert::linear_to_srgb(v.max(0.0)),
             Transfer::Gamma(g) => v.max(0.0).powf(1.0 / g),
         }
     }
@@ -160,7 +160,7 @@ pub fn apply_depth(adj: &Adjustment, buf: &mut Buffer, transfer: Transfer, depth
             let set_lum = *preserve_luminosity && !linear_doc;
             map_rgb(buf, |c| {
                 let f = mat3_mul(&m, c.map(|v| transfer.decode(v))).map(|v| transfer.encode(v));
-                let f = if set_lum { photocraft_color::blend::set_lum(f, photocraft_color::blend::lum(c)) } else { f };
+                let f = if set_lum { pixelwright_color::blend::set_lum(f, pixelwright_color::blend::lum(c)) } else { f };
                 f.map(|v| v.clamp(0.0, 1.0))
             })
         }
@@ -267,7 +267,7 @@ pub fn tone_luts_depth(adj: &Adjustment, depth: Option<SampleType>) -> [Vec<f32>
 /// through the conversions the document's surfaces use. The change is added as a difference of
 /// two round trips, so channels a curve leaves alone (and out-of-gamut colours) stay exact.
 fn tone_in_space(space: ToneSpace, luts: &[Vec<f32>; 4], c: [f32; 3]) -> [f32; 3] {
-    use photocraft_color::convert::{cmyk_to_rgb, lab_to_srgb, rgb_to_cmyk, srgb_to_lab};
+    use pixelwright_color::convert::{cmyk_to_rgb, lab_to_srgb, rgb_to_cmyk, srgb_to_lab};
     let (before, after) = match space {
         ToneSpace::Cmyk => {
             let ink = rgb_to_cmyk(c);
@@ -732,7 +732,7 @@ mod lookup_tests {
 #[cfg(test)]
 mod tone_tests {
     use super::*;
-    use photocraft_geom::Rect;
+    use pixelwright_geom::Rect;
 
     fn ramp() -> Buffer {
         let rect = Rect::new(0, 0, 8, 8);

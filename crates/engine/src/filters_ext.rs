@@ -9,12 +9,12 @@
 
 use std::sync::Arc;
 
-use photocraft_algo::{
+use pixelwright_algo::{
     self as algo, BlurPath, BlurQuality, BlurShape, DepthSource, DiffuseMode, Distribution, ExtrudeType, FieldPin, FilterParams, HsbModel, IrisPin, LensType,
     Light, LightKind, MezzotintType, SmartBlurMode, SpinPin, TextureChannel, TileFill, UndefinedAreas, WindMethod, ZigZagStyle,
 };
-use photocraft_doc::{Document, Layer};
-use photocraft_geom::Rect;
+use pixelwright_doc::{Document, Layer};
+use pixelwright_geom::Rect;
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;
@@ -407,9 +407,9 @@ pub(crate) fn prepare(s: &Session, id: &str, p: &Value) -> Value {
 
 /// A flattened document (or one of its layers) as an RGBA map image.
 fn map_from_document(doc: &Document, layer: Option<u64>) -> Option<algo::Image> {
-    let buf = match layer.and_then(|l| doc.layer(photocraft_doc::LayerId(l))) {
-        Some(l) => photocraft_compose::render_layer(l, l.surface().map(|s| s.content_bounds()).filter(|r| !r.is_empty()).unwrap_or_else(|| doc.bounds())),
-        None => photocraft_compose::flatten(doc),
+    let buf = match layer.and_then(|l| doc.layer(pixelwright_doc::LayerId(l))) {
+        Some(l) => pixelwright_compose::render_layer(l, l.surface().map(|s| s.content_bounds()).filter(|r| !r.is_empty()).unwrap_or_else(|| doc.bounds())),
+        None => pixelwright_compose::flatten(doc),
     };
     if buf.rect.is_empty() {
         return None;
@@ -427,7 +427,7 @@ pub(crate) fn resolve(s: &Session, fp: &mut FilterParams, p: &Value) -> Result<(
     let layer = p.get("mapLayer").and_then(Value::as_u64);
     let img = if let Some(path) = p.get("mapPath").and_then(Value::as_str).filter(|p| !p.is_empty()) {
         let bytes = std::fs::read(path).map_err(|e| EngineError::Other(format!("cannot read displacement map `{path}`: {e}")))?;
-        let imported = photocraft_io::import(path, &bytes).map_err(|e| EngineError::Other(format!("cannot open displacement map `{path}`: {e}")))?;
+        let imported = pixelwright_io::import(path, &bytes).map_err(|e| EngineError::Other(format!("cannot open displacement map `{path}`: {e}")))?;
         map_from_document(&imported.document, layer)
     } else if let Some(d) = p.get("mapDocument") {
         let docs = s.documents();

@@ -35,7 +35,7 @@ use std::sync::mpsc::Sender;
 use base64::Engine as _;
 use serde_json::{Value, json};
 
-use crate::PhotocraftApp;
+use crate::PixelwrightApp;
 use crate::canvas::{ToolEvent, tool_event};
 use crate::state::{DialogKind, Tool, UiState};
 
@@ -65,7 +65,7 @@ pub enum Outcome {
     AfterInput,
     /// A command started a background job and the caller waits for it: reply with its result
     /// once it has been applied (or with its error / "cancelled").
-    AfterJob(photocraft_engine::jobs::JobId),
+    AfterJob(pixelwright_engine::jobs::JobId),
 }
 
 /// The fields `ui.set` reads. Anything else is rejected before a field is applied, so a typo or
@@ -108,7 +108,7 @@ fn wrap(r: Result<Value, String>) -> Outcome {
 /// Run a command the way automation does (script events off). Long commands may run as
 /// background jobs: by default the reply waits for the job's result (backward compatible); with
 /// `wait` false it is `{job, pending: true}` at once.
-fn run_waiting(app: &mut PhotocraftApp, wait: bool, run: impl FnOnce(&mut PhotocraftApp) -> Result<Value, String>) -> Outcome {
+fn run_waiting(app: &mut PixelwrightApp, wait: bool, run: impl FnOnce(&mut PixelwrightApp) -> Result<Value, String>) -> Outcome {
     let events_enabled = app.session.prefs().script_events.enabled;
     if events_enabled {
         app.session.edit_prefs(|prefs| prefs.script_events.enabled = false);
@@ -126,7 +126,7 @@ fn run_waiting(app: &mut PhotocraftApp, wait: bool, run: impl FnOnce(&mut Photoc
 
 /// Screen position of document point (x, y) on the main canvas, where a `ui.pointer` right-click
 /// opens its menu (the mouse's opens at the pointer); the canvas centre when it can't be mapped.
-fn screen_point(app: &PhotocraftApp, x: f64, y: f64) -> [f32; 2] {
+fn screen_point(app: &PixelwrightApp, x: f64, y: f64) -> [f32; 2] {
     let p = crate::canvas::ViewXform::active(app)
         .map(|xf| xf.to_screen(x as f32, y as f32))
         .filter(|p| p.is_finite())
@@ -134,7 +134,7 @@ fn screen_point(app: &PhotocraftApp, x: f64, y: f64) -> [f32; 2] {
     [p.x, p.y]
 }
 
-pub fn handle(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) -> Outcome {
+pub fn handle(app: &mut PixelwrightApp, ctx: &egui::Context, req: &ControlRequest) -> Outcome {
     let saved = app.session.authorize;
     if let Some(gate) = app.services.automation_authorize {
         app.session.authorize = Some(gate);
@@ -144,7 +144,7 @@ pub fn handle(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest
     outcome
 }
 
-fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) -> Outcome {
+fn dispatch(app: &mut PixelwrightApp, ctx: &egui::Context, req: &ControlRequest) -> Outcome {
     let p = &req.params;
     let s = |k: &str| p.get(k).and_then(Value::as_str);
     let u = |k: &str| p.get(k).and_then(Value::as_u64);
@@ -175,7 +175,7 @@ fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) 
             // `engine.execute` is programmatic: engine commands run directly with their default
             // params and never open a dialog (an agent would otherwise get a modal instead of a
             // result). `ui.menu.invoke` behaves like a menu click, so it may open the dialog.
-            if req.method == "engine.execute" && photocraft_engine::commands::find(id).is_some() {
+            if req.method == "engine.execute" && pixelwright_engine::commands::find(id).is_some() {
                 return run_waiting(app, wait, |app| app.run(id, params));
             }
             run_waiting(app, wait, |app| crate::menus::invoke(app, ctx, id, params))
@@ -186,8 +186,8 @@ fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) 
         "jobs.cancel" => {
             let all = p.get("job").is_none_or(Value::is_null);
             match p.get("job").and_then(Value::as_u64) {
-                Some(j) if app.session.job(photocraft_engine::jobs::JobId(j)).is_some() => {
-                    crate::jobs_ui::cancel(app, photocraft_engine::jobs::JobId(j));
+                Some(j) if app.session.job(pixelwright_engine::jobs::JobId(j)).is_some() => {
+                    crate::jobs_ui::cancel(app, pixelwright_engine::jobs::JobId(j));
                     ok(json!({"cancelled": 1}))
                 }
                 Some(j) => err(format!("no running job {j}")),
@@ -209,7 +209,7 @@ fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) 
             }
             let gradient_blend = if let Some(value) = p.get("gradientBlendMode") {
                 let Some(name) = value.as_str() else { return err("gradientBlendMode must be a blend mode name") };
-                let Some(mode) = photocraft_engine::commands::blend_from_str(name).filter(|m| photocraft_color::BlendMode::LAYER_MODES.contains(m)) else {
+                let Some(mode) = pixelwright_engine::commands::blend_from_str(name).filter(|m| pixelwright_color::BlendMode::LAYER_MODES.contains(m)) else {
                     return err(format!("unknown gradient blend mode `{name}`"));
                 };
                 Some(mode)
@@ -350,7 +350,7 @@ fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) 
                 }
                 "command" | "Command" => {
                     let Some(cmd) = s("command") else { return err("command dialogs need `command`") };
-                    let label = photocraft_engine::commands::find(cmd).map(|c| c.label).unwrap_or(cmd);
+                    let label = pixelwright_engine::commands::find(cmd).map(|c| c.label).unwrap_or(cmd);
                     return ok(json!({"dialog": crate::dialogs::open_command_dialog(app, cmd, label)}));
                 }
                 other => return err(format!("unknown dialog kind `{other}`")),
@@ -531,9 +531,9 @@ fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) 
         "ui.gpu.simulateLoss" => {
             let error = p.get("error").and_then(Value::as_bool).unwrap_or(false);
             let fault = if error {
-                photocraft_gpu::Fault::Error("simulated error (ui.gpu.simulateLoss)".into())
+                pixelwright_gpu::Fault::Error("simulated error (ui.gpu.simulateLoss)".into())
             } else {
-                photocraft_gpu::Fault::Lost("simulated (ui.gpu.simulateLoss)".into())
+                pixelwright_gpu::Fault::Lost("simulated (ui.gpu.simulateLoss)".into())
             };
             let active = match app.gpu_health() {
                 Some(h) => {
@@ -558,7 +558,7 @@ fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) 
             if p.get("focus").and_then(Value::as_bool).unwrap_or(true) {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
             }
-            // The capture itself is issued by `PhotocraftApp::issue_screenshots` once open/close
+            // The capture itself is issued by `PixelwrightApp::issue_screenshots` once open/close
             // animations (modals, popups) have settled.
             let token = app.ui.alloc_id();
             ctx.request_repaint();
@@ -593,7 +593,7 @@ fn dispatch(app: &mut PhotocraftApp, ctx: &egui::Context, req: &ControlRequest) 
 }
 
 /// Snapshot of everything on screen, addressable by id.
-pub fn inspect(app: &PhotocraftApp, ctx: &egui::Context) -> Value {
+pub fn inspect(app: &PixelwrightApp, ctx: &egui::Context) -> Value {
     let screen = ctx.content_rect();
     let dialogs: Vec<Value> =
         app.ui.dialogs.iter().map(|d| json!({"id": d.id, "kind": d.kind, "title": crate::dialogs::title(d), "fields": d.fields})).collect();
@@ -624,8 +624,8 @@ pub fn inspect(app: &PhotocraftApp, ctx: &egui::Context) -> Value {
         "notices": app.ui.notices,
         "gpuFallbackNotice": app.ui.gpu_fallback_notice,
         "frame": app.frame,
-        "session": photocraft_engine::inspect::session(&app.session),
-        "document": app.session.active().map(photocraft_engine::inspect::document),
+        "session": pixelwright_engine::inspect::session(&app.session),
+        "document": app.session.active().map(pixelwright_engine::inspect::document),
         "perf": {"fps": app.fps, "timings": app.perf},
         "brush": {"size": app.session.tools.brush.size, "hardness": app.session.tools.brush.hardness, "opacity": app.session.tools.brush.opacity},
         "distort": app.distort.describe(),
@@ -634,7 +634,7 @@ pub fn inspect(app: &PhotocraftApp, ctx: &egui::Context) -> Value {
     })
 }
 
-pub fn save_screenshot(app: &mut PhotocraftApp, image: &egui::ColorImage, path: Option<&str>) -> Value {
+pub fn save_screenshot(app: &mut PixelwrightApp, image: &egui::ColorImage, path: Option<&str>) -> Value {
     let [w, h] = image.size;
     let rgba: Vec<u8> = image.pixels.iter().flat_map(|c| c.to_array()).collect();
     let png = match app.services.encode_png.as_ref() {
@@ -669,7 +669,7 @@ pub fn save_screenshot(app: &mut PhotocraftApp, image: &egui::ColorImage, path: 
 mod tests {
     use super::*;
 
-    fn call(app: &mut PhotocraftApp, ctx: &egui::Context, method: &str, params: Value) -> Value {
+    fn call(app: &mut PixelwrightApp, ctx: &egui::Context, method: &str, params: Value) -> Value {
         let (req, _rx) = ControlRequest::new(method, params);
         match handle(app, ctx, &req) {
             Outcome::Done(v) => v,
@@ -679,7 +679,7 @@ mod tests {
 
     #[test]
     fn right_pointer_opens_agent_visible_selection_menu() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
         app.run("file.new", json!({"width": 32, "height": 32})).unwrap();
         app.run("select.rect", json!({"x": 1, "y": 1, "width": 8, "height": 8})).unwrap();
@@ -701,7 +701,7 @@ mod tests {
 
     #[test]
     fn agent_can_inspect_and_choose_pen_make_selection_from_full_context_menu() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
         app.run("file.new", json!({"width": 32, "height": 32})).unwrap();
         app.run("path.set", json!({"name":"work","path":{"subpaths":[{"closed":true,"knots":[[2,2],[20,2],[20,20]]}]}})).unwrap();
@@ -730,7 +730,7 @@ mod tests {
 
     #[test]
     fn engine_execute_runs_with_defaults_but_menu_invoke_opens_the_dialog() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
         app.run("file.new", json!({"width": 32, "height": 32})).unwrap();
         app.run("edit.fill", json!({"color": "#808080"})).unwrap();
@@ -747,7 +747,7 @@ mod tests {
     #[test]
     fn ui_set_rejects_unknown_fields_before_changing_anything() {
         use crate::theme::ThemeKind;
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
         app.set_theme(&ctx, ThemeKind::StudioLight);
         // `dark` was advertised to MCP clients but never read; a typo looked like success too.
@@ -768,11 +768,11 @@ mod tests {
 
     #[test]
     fn ui_set_gradient_blend_mode_validates_and_updates_options() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
         let good = call(&mut app, &ctx, "ui.set", json!({"tool": "gradient", "gradientBlendMode": "Difference", "gradientClassic": true}));
         assert_eq!(good["ok"], true, "{good}");
-        assert_eq!(app.ui.tool_options.gradient_blend_mode, photocraft_color::BlendMode::Difference);
+        assert_eq!(app.ui.tool_options.gradient_blend_mode, pixelwright_color::BlendMode::Difference);
         assert!(app.ui.tool_options.gradient_classic);
         let bad = call(&mut app, &ctx, "ui.set", json!({"gradientBlendMode": "nonsense", "gradientClassic": false}));
         assert_eq!(bad["ok"], false, "{bad}");
@@ -781,7 +781,7 @@ mod tests {
 
     #[test]
     fn ui_set_color_panel_picks_the_edited_chip() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
         assert_eq!(call(&mut app, &ctx, "ui.set", json!({"colorPanel": {"background": true}}))["ok"], true);
         assert!(app.ui.color_panel.background);
@@ -792,7 +792,7 @@ mod tests {
     #[test]
     fn ui_set_unknown_theme_error_names_every_theme_and_each_name_works() {
         use crate::theme::ThemeKind;
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
         let r = call(&mut app, &ctx, "ui.set", json!({"theme": "nope"}));
         assert_eq!(r["ok"], false);
@@ -807,7 +807,7 @@ mod tests {
 
     #[test]
     fn ui_set_brush_size_dispatches_a_journaled_brush_command() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
 
         let r = call(&mut app, &ctx, "ui.set", json!({"brushSize": 42.5}));
@@ -838,7 +838,7 @@ mod tests {
 
     #[test]
     fn preferences_apply_is_available_over_control_without_closing() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         let ctx = egui::Context::default();
         let r = call(&mut app, &ctx, "ui.menu.invoke", json!({"id": "edit.preferences.interface"}));
         let id = r["result"]["dialog"].as_u64().unwrap();
@@ -846,10 +846,10 @@ mod tests {
         values["interface"]["uiScale"] = json!("200");
         assert_eq!(call(&mut app, &ctx, "ui.dialog.set", json!({"dialog": id, "field": "values", "value": values}))["ok"], true);
         assert_eq!(call(&mut app, &ctx, "ui.dialog.apply", json!({"dialog": id}))["ok"], true);
-        assert_eq!(app.session.prefs().interface.ui_scale, photocraft_engine::prefs::UiScale::P200);
+        assert_eq!(app.session.prefs().interface.ui_scale, pixelwright_engine::prefs::UiScale::P200);
         assert!(app.ui.dialog_mut(id).is_some());
         assert_eq!(call(&mut app, &ctx, "ui.dialog.cancel", json!({"dialog": id}))["ok"], true);
-        assert_eq!(app.session.prefs().interface.ui_scale, photocraft_engine::prefs::UiScale::P200);
+        assert_eq!(app.session.prefs().interface.ui_scale, pixelwright_engine::prefs::UiScale::P200);
         for params in [json!({}), json!({"dialog": "invalid"}), json!({"dialog": u64::MAX})] {
             assert_eq!(call(&mut app, &ctx, "ui.dialog.apply", params)["ok"], false);
         }
@@ -861,7 +861,7 @@ mod tests {
             automation_command: Some(Box::new(|id, _| if id == "prefs.set" { Err("preference changes denied".into()) } else { Ok(()) })),
             ..Default::default()
         };
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), services);
         let ctx = egui::Context::default();
         let before = app.session.prefs().to_json();
         let id = crate::prefs_ui::open_preferences(&mut app, "interface");
@@ -879,7 +879,7 @@ mod tests {
             automation_command: Some(Box::new(|id, _| if id.starts_with("file.") { Err("filesystem command denied".into()) } else { Ok(()) })),
             ..Default::default()
         };
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), services);
         let ctx = egui::Context::default();
         app.automation_input = true;
         let error = crate::menus::invoke(&mut app, &ctx, "file.open", json!({})).unwrap_err();
@@ -888,9 +888,9 @@ mod tests {
 
     #[test]
     fn automation_open_and_save_use_the_roots_and_reply_with_warnings() {
-        use photocraft_color::{ColorMode, SampleType};
-        use photocraft_doc::Document;
-        use photocraft_geom::Size;
+        use pixelwright_color::{ColorMode, SampleType};
+        use pixelwright_doc::Document;
+        use pixelwright_geom::Size;
         use std::cell::RefCell;
         use std::rc::Rc;
 
@@ -900,7 +900,7 @@ mod tests {
             write: Some(Box::new(|_p: &str, _b: &[u8]| Err("ambient writer used".into()))),
             ..Default::default()
         };
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), services);
         let ctx = egui::Context::default();
         let r = call(&mut app, &ctx, "app.open", json!({"path": "in/warn.psd"}));
         assert!(r.to_string().contains("automation read authority is not configured"), "{r}");
@@ -922,7 +922,7 @@ mod tests {
             })),
             ..Default::default()
         };
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), services);
         let r = call(&mut app, &ctx, "app.open", json!({"path": "in/warn.psd"}));
         assert_eq!(r["result"]["warnings"], json!(["Adjustment layer flattened"]), "{r}");
         assert_eq!(r["result"]["name"], "warn.psd");
@@ -948,9 +948,9 @@ mod tests {
         assert!(r["error"].as_str().unwrap().contains("pass `path`"), "{r}");
     }
 
-    fn deny_ambient_file(id: &str, _: &serde_json::Value) -> photocraft_engine::Result<()> {
+    fn deny_ambient_file(id: &str, _: &serde_json::Value) -> pixelwright_engine::Result<()> {
         if id.starts_with("file.") && id != "file.new" {
-            Err(photocraft_engine::EngineError::Other(format!("automation command `{id}` is disabled")))
+            Err(pixelwright_engine::EngineError::Other(format!("automation command `{id}` is disabled")))
         } else {
             Ok(())
         }
@@ -959,8 +959,8 @@ mod tests {
     #[test]
     fn actions_play_checks_each_step_over_control() {
         let services = crate::Services { automation_authorize: Some(deny_ambient_file), ..Default::default() };
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
-        app.session.actions.list.push(photocraft_engine::actions_cmds::Action {
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), services);
+        app.session.actions.list.push(pixelwright_engine::actions_cmds::Action {
             name: "Open".into(),
             steps: vec![("file.open".into(), json!({"path": "/etc/passwd"})), ("layer.new.layer".into(), json!({}))],
         });
@@ -977,8 +977,8 @@ mod tests {
     #[test]
     fn actions_play_checks_each_step_for_synthetic_input() {
         let services = crate::Services { automation_authorize: Some(deny_ambient_file), ..Default::default() };
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), services);
-        app.session.actions.list.push(photocraft_engine::actions_cmds::Action {
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), services);
+        app.session.actions.list.push(pixelwright_engine::actions_cmds::Action {
             name: "Open".into(),
             steps: vec![("file.open".into(), json!({"path": "/etc/passwd"})), ("layer.new.layer".into(), json!({}))],
         });

@@ -2,7 +2,7 @@
 //! saves a document *snapshot* into a recovery directory on a background
 //! thread, so the UI never blocks.
 //!
-//! Layout: `<recovery_dir>/<key>.pcraft/` (directory bundles, so repeated
+//! Layout: `<recovery_dir>/<key>.pxwr/` (directory bundles, so repeated
 //! autosaves write only changed tiles) plus `<key>.json` with
 //! [`RecoveryInfo`]. Native targets only (threads and a filesystem).
 //!
@@ -17,11 +17,11 @@ use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use photocraft_doc::Document;
+use pixelwright_doc::Document;
 use serde::{Deserialize, Serialize};
 
 use crate::store::write_atomic;
-use crate::{PcraftWriter, Result, SaveOptions, SaveStats};
+use crate::{PxwrWriter, Result, SaveOptions, SaveStats};
 
 /// Sidecar describing an autosave.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -70,7 +70,7 @@ impl Autosaver {
         let key = sanitize(key);
         let (tx, rx) = mpsc::channel::<Job>();
         let last = Arc::new(Mutex::new(None));
-        let bundle = dir.join(format!("{key}.pcraft"));
+        let bundle = dir.join(format!("{key}.pxwr"));
         let sidecar = dir.join(format!("{key}.json"));
         let last2 = last.clone();
         let handle = std::thread::Builder::new().name(format!("autosave-{key}")).spawn(move || worker(rx, bundle, sidecar, last2)).ok();
@@ -78,7 +78,7 @@ impl Autosaver {
     }
 
     pub fn bundle_path(&self) -> PathBuf {
-        self.dir.join(format!("{}.pcraft", self.key))
+        self.dir.join(format!("{}.pxwr", self.key))
     }
 
     /// Queue a snapshot for saving (returns immediately).
@@ -128,7 +128,7 @@ impl Drop for Autosaver {
 }
 
 fn worker(rx: Receiver<Job>, bundle: PathBuf, sidecar: PathBuf, last: Arc<Mutex<Option<Result<SaveStats>>>>) {
-    let mut writer = PcraftWriter::new();
+    let mut writer = PxwrWriter::new();
     while let Ok(mut job) = rx.recv() {
         // Coalesce: skip to the newest queued snapshot.
         while let Ok(newer) = rx.try_recv() {
@@ -161,7 +161,7 @@ pub fn list_recovery(recovery_dir: &Path) -> Vec<RecoveryEntry> {
             && sanitize(&info.key) == info.key
             && p.file_stem().is_some_and(|stem| *stem == *info.key)
         {
-            let bundle = recovery_dir.join(format!("{}.pcraft", info.key));
+            let bundle = recovery_dir.join(format!("{}.pxwr", info.key));
             if bundle.join(crate::store::MANIFEST).is_file() {
                 out.push(RecoveryEntry { info, bundle });
             }
@@ -240,7 +240,7 @@ impl RecoveryStore {
 }
 
 fn remove_entry(dir: &Path, key: &str) -> Result<()> {
-    let bundle = dir.join(format!("{key}.pcraft"));
+    let bundle = dir.join(format!("{key}.pxwr"));
     if bundle.exists() {
         std::fs::remove_dir_all(bundle)?;
     }

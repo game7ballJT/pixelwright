@@ -22,8 +22,8 @@ use std::any::Any;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex, PoisonError, Weak};
 
-use photocraft_doc::{DocId, Document, LayerId};
-use photocraft_raster::Interrupt;
+use pixelwright_doc::{DocId, Document, LayerId};
+use pixelwright_raster::Interrupt;
 use serde::Serialize;
 use serde_json::{Value, json};
 
@@ -259,7 +259,7 @@ fn independent_of_document(id: &str) -> bool {
 #[cfg(not(target_arch = "wasm32"))]
 fn read_path(path: &str) -> Result<Vec<u8>> {
     // Bounded reads, and a clear error for a file larger than memory (#375).
-    photocraft_format::read_file(std::path::Path::new(path)).map_err(|e| EngineError::Other(format!("{path}: {e}")))
+    pixelwright_format::read_file(std::path::Path::new(path)).map_err(|e| EngineError::Other(format!("{path}: {e}")))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -308,7 +308,7 @@ pub fn run<T: Send + 'static>(
         let label_w = label.to_string();
         // The work closure is moved into the thread. If spawning fails (thread limits), there is
         // no way to get it back, so the error is reported instead.
-        let spawned = std::thread::Builder::new().name(format!("photocraft-job-{}", id.0)).spawn(move || {
+        let spawned = std::thread::Builder::new().name(format!("pixelwright-job-{}", id.0)).spawn(move || {
             let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| work(&wctx).map(|t| Box::new(t) as Payload)))
                 .unwrap_or_else(|_| Err(EngineError::Other(format!("`{label_w}` failed with an internal error (logged); the document is unchanged"))));
             // The receiver is gone when the job was cancelled: nothing to report.
@@ -420,12 +420,12 @@ impl Session {
                 };
                 ctx.check()?;
                 ctx.progress(0.02, "Decoding");
-                ctx.stage(0.02, 1.0, "Decoding", |ctl| photocraft_io::import_with(&name_w, &bytes, ctl)).map_err(|e| match e {
-                    photocraft_io::IoError::Cancelled => EngineError::Cancelled,
+                ctx.stage(0.02, 1.0, "Decoding", |ctl| pixelwright_io::import_with(&name_w, &bytes, ctl)).map_err(|e| match e {
+                    pixelwright_io::IoError::Cancelled => EngineError::Cancelled,
                     e => EngineError::Other(e.to_string()),
                 })
             },
-            move |s, r: photocraft_io::ImportResult| {
+            move |s, r: pixelwright_io::ImportResult| {
                 let (index, color) = s.open_document(r.document, None);
                 Ok(json!({"document": index, "name": name_a, "warnings": r.warnings, "color": color}))
             },

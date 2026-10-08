@@ -3457,7 +3457,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft"
+name = "pixelwright"
 version = "0.5.0"
 dependencies = [
  "arboard",
@@ -3470,18 +3470,18 @@ dependencies = [
  "objc2-app-kit 0.3.2",
  "objc2-foundation 0.3.2",
  "open",
- "photocraft-automation",
- "photocraft-codecs",
- "photocraft-color",
- "photocraft-compose",
- "photocraft-doc",
- "photocraft-engine",
- "photocraft-format",
- "photocraft-geom",
- "photocraft-io",
- "photocraft-raster",
- "photocraft-tablet",
- "photocraft-ui-egui",
+ "pixelwright-automation",
+ "pixelwright-codecs",
+ "pixelwright-color",
+ "pixelwright-compose",
+ "pixelwright-doc",
+ "pixelwright-engine",
+ "pixelwright-format",
+ "pixelwright-geom",
+ "pixelwright-io",
+ "pixelwright-raster",
+ "pixelwright-tablet",
+ "pixelwright-ui-egui",
  "rfd",
  "ron",
  "serde_json",
@@ -3491,31 +3491,31 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-algo"
+name = "pixelwright-algo"
 version = "0.5.0"
 dependencies = [
- "photocraft-color",
- "photocraft-geom",
- "photocraft-raster",
+ "pixelwright-color",
+ "pixelwright-geom",
+ "pixelwright-raster",
  "rayon",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "photocraft-automation"
+name = "pixelwright-automation"
 version = "0.5.0"
 dependencies = [
  "base64",
  "cap-std",
  "getrandom 0.3.4",
- "photocraft-codecs",
- "photocraft-compose",
- "photocraft-doc",
- "photocraft-engine",
- "photocraft-format",
- "photocraft-geom",
- "photocraft-io",
+ "pixelwright-codecs",
+ "pixelwright-compose",
+ "pixelwright-doc",
+ "pixelwright-engine",
+ "pixelwright-format",
+ "pixelwright-geom",
+ "pixelwright-io",
  "rmcp",
  "schemars",
  "serde",
@@ -3525,20 +3525,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-cli"
+name = "pixelwright-cli"
 version = "0.5.0"
 dependencies = [
- "photocraft-automation",
- "photocraft-codecs",
- "photocraft-engine",
- "photocraft-format",
- "photocraft-io",
+ "pixelwright-automation",
+ "pixelwright-codecs",
+ "pixelwright-engine",
+ "pixelwright-format",
+ "pixelwright-io",
  "serde_json",
  "tokio",
 ]
 
 [[package]]
-name = "photocraft-cms"
+name = "pixelwright-cms"
 version = "0.5.0"
 dependencies = [
  "moxcms",
@@ -3546,7 +3546,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-codecs"
+name = "pixelwright-codecs"
 version = "0.5.0"
 dependencies = [
  "exr",
@@ -3555,7 +3555,7 @@ dependencies = [
  "image",
  "image-webp",
  "jpeg-encoder",
- "photocraft-heif",
+ "pixelwright-heif",
  "png 0.18.1",
  "proptest",
  "rayon",
@@ -3566,62 +3566,62 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-color"
+name = "pixelwright-color"
 version = "0.5.0"
 dependencies = [
- "photocraft-cms",
+ "pixelwright-cms",
  "serde",
 ]
 
 [[package]]
-name = "photocraft-compose"
+name = "pixelwright-compose"
 version = "0.5.0"
 dependencies = [
  "criterion",
- "photocraft-color",
- "photocraft-doc",
- "photocraft-geom",
- "photocraft-paint",
- "photocraft-raster",
- "photocraft-vector",
+ "pixelwright-color",
+ "pixelwright-doc",
+ "pixelwright-geom",
+ "pixelwright-paint",
+ "pixelwright-raster",
+ "pixelwright-vector",
  "proptest",
  "rayon",
 ]
 
 [[package]]
-name = "photocraft-doc"
+name = "pixelwright-doc"
 version = "0.5.0"
 dependencies = [
- "photocraft-color",
- "photocraft-geom",
- "photocraft-raster",
+ "pixelwright-color",
+ "pixelwright-geom",
+ "pixelwright-raster",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "photocraft-engine"
+name = "pixelwright-engine"
 version = "0.5.0"
 dependencies = [
  "blake3",
  "flate2",
- "photocraft-algo",
- "photocraft-cms",
- "photocraft-codecs",
- "photocraft-color",
- "photocraft-compose",
- "photocraft-doc",
- "photocraft-format",
- "photocraft-geom",
- "photocraft-io",
- "photocraft-ops",
- "photocraft-paint",
- "photocraft-plugins",
- "photocraft-psd",
- "photocraft-raster",
- "photocraft-raw",
- "photocraft-text",
- "photocraft-vector",
+ "pixelwright-algo",
+ "pixelwright-cms",
+ "pixelwright-codecs",
+ "pixelwright-color",
+ "pixelwright-compose",
+ "pixelwright-doc",
+ "pixelwright-format",
+ "pixelwright-geom",
+ "pixelwright-io",
+ "pixelwright-ops",
+ "pixelwright-paint",
+ "pixelwright-plugins",
+ "pixelwright-psd",
+ "pixelwright-raster",
+ "pixelwright-raw",
+ "pixelwright-text",
+ "pixelwright-vector",
  "rayon",
  "serde",
  "serde_json",
@@ -3630,16 +3630,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-format"
+name = "pixelwright-format"
 version = "0.5.0"
 dependencies = [
  "blake3",
  "flate2",
- "photocraft-codecs",
- "photocraft-color",
- "photocraft-doc",
- "photocraft-geom",
- "photocraft-raster",
+ "pixelwright-codecs",
+ "pixelwright-color",
+ "pixelwright-doc",
+ "pixelwright-geom",
+ "pixelwright-raster",
  "proptest",
  "ruzstd",
  "serde",
@@ -3648,85 +3648,85 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-geom"
+name = "pixelwright-geom"
 version = "0.5.0"
 dependencies = [
  "serde",
 ]
 
 [[package]]
-name = "photocraft-gpu"
+name = "pixelwright-gpu"
 version = "0.5.0"
 dependencies = [
  "half",
  "log",
- "photocraft-color",
- "photocraft-compose",
- "photocraft-doc",
- "photocraft-geom",
- "photocraft-raster",
- "photocraft-vector",
+ "pixelwright-color",
+ "pixelwright-compose",
+ "pixelwright-doc",
+ "pixelwright-geom",
+ "pixelwright-raster",
+ "pixelwright-vector",
  "pollster 1.0.1",
  "rayon",
  "wgpu",
 ]
 
 [[package]]
-name = "photocraft-heif"
+name = "pixelwright-heif"
 version = "0.5.0"
 dependencies = [
  "heic-rs",
 ]
 
 [[package]]
-name = "photocraft-io"
+name = "pixelwright-io"
 version = "0.5.0"
 dependencies = [
  "blake3",
- "photocraft-algo",
- "photocraft-cms",
- "photocraft-codecs",
- "photocraft-color",
- "photocraft-compose",
- "photocraft-doc",
- "photocraft-format",
- "photocraft-geom",
- "photocraft-paint",
- "photocraft-psd",
- "photocraft-raster",
- "photocraft-raw",
- "photocraft-text",
- "photocraft-vector",
+ "pixelwright-algo",
+ "pixelwright-cms",
+ "pixelwright-codecs",
+ "pixelwright-color",
+ "pixelwright-compose",
+ "pixelwright-doc",
+ "pixelwright-format",
+ "pixelwright-geom",
+ "pixelwright-paint",
+ "pixelwright-psd",
+ "pixelwright-raster",
+ "pixelwright-raw",
+ "pixelwright-text",
+ "pixelwright-vector",
  "proptest",
  "serde_json",
  "thiserror 2.0.21",
 ]
 
 [[package]]
-name = "photocraft-ops"
+name = "pixelwright-ops"
 version = "0.5.0"
 dependencies = [
- "photocraft-doc",
+ "pixelwright-doc",
 ]
 
 [[package]]
-name = "photocraft-paint"
+name = "pixelwright-paint"
 version = "0.5.0"
 dependencies = [
- "photocraft-color",
- "photocraft-geom",
- "photocraft-raster",
+ "pixelwright-color",
+ "pixelwright-geom",
+ "pixelwright-raster",
  "serde",
  "serde_json",
 ]
 
 [[package]]
-name = "photocraft-plugins"
+name = "pixelwright-plugins"
 version = "0.5.0"
 dependencies = [
- "photocraft-color",
- "photocraft-geom",
- "photocraft-raster",
+ "pixelwright-color",
+ "pixelwright-geom",
+ "pixelwright-raster",
  "rayon",
  "serde",
  "serde_json",
@@ -3736,37 +3736,37 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-psd"
+name = "pixelwright-psd"
 version = "0.5.0"
 dependencies = [
  "flate2",
- "photocraft-psd",
+ "pixelwright-psd",
  "proptest",
  "serde",
  "thiserror 2.0.21",
 ]
 
 [[package]]
-name = "photocraft-raster"
+name = "pixelwright-raster"
 version = "0.5.0"
 dependencies = [
- "photocraft-color",
- "photocraft-geom",
+ "pixelwright-color",
+ "pixelwright-geom",
  "proptest",
  "serde",
 ]
 
 [[package]]
-name = "photocraft-raw"
+name = "pixelwright-raw"
 version = "0.5.0"
 dependencies = [
- "photocraft-raw",
+ "pixelwright-raw",
  "png 0.18.1",
  "rayon",
 ]
 
 [[package]]
-name = "photocraft-tablet"
+name = "pixelwright-tablet"
 version = "0.5.0"
 dependencies = [
  "block2 0.6.2",
@@ -3778,32 +3778,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-testkit"
+name = "pixelwright-testkit"
 version = "0.5.0"
 dependencies = [
  "memory-stats",
- "photocraft-color",
- "photocraft-geom",
- "photocraft-raster",
+ "pixelwright-color",
+ "pixelwright-geom",
+ "pixelwright-raster",
  "serde_json",
 ]
 
 [[package]]
-name = "photocraft-text"
+name = "pixelwright-text"
 version = "0.5.0"
 dependencies = [
  "flate2",
  "parley",
- "photocraft-color",
- "photocraft-doc",
- "photocraft-geom",
- "photocraft-psd",
- "photocraft-raster",
+ "pixelwright-color",
+ "pixelwright-doc",
+ "pixelwright-geom",
+ "pixelwright-psd",
+ "pixelwright-raster",
  "skrifa",
 ]
 
 [[package]]
-name = "photocraft-ui-egui"
+name = "pixelwright-ui-egui"
 version = "0.5.0"
 dependencies = [
  "base64",
@@ -3812,23 +3812,23 @@ dependencies = [
  "egui_extras",
  "egui_kittest",
  "log",
- "photocraft-algo",
- "photocraft-cms",
- "photocraft-codecs",
- "photocraft-color",
- "photocraft-compose",
- "photocraft-doc",
- "photocraft-engine",
- "photocraft-format",
- "photocraft-geom",
- "photocraft-gpu",
- "photocraft-io",
- "photocraft-plugins",
- "photocraft-psd",
- "photocraft-raster",
- "photocraft-testkit",
- "photocraft-text",
- "photocraft-vector",
+ "pixelwright-algo",
+ "pixelwright-cms",
+ "pixelwright-codecs",
+ "pixelwright-color",
+ "pixelwright-compose",
+ "pixelwright-doc",
+ "pixelwright-engine",
+ "pixelwright-format",
+ "pixelwright-geom",
+ "pixelwright-gpu",
+ "pixelwright-io",
+ "pixelwright-plugins",
+ "pixelwright-psd",
+ "pixelwright-raster",
+ "pixelwright-testkit",
+ "pixelwright-text",
+ "pixelwright-vector",
  "rayon",
  "serde",
  "serde_json",
@@ -3837,29 +3837,29 @@ dependencies = [
 ]
 
 [[package]]
-name = "photocraft-vector"
+name = "pixelwright-vector"
 version = "0.5.0"
 dependencies = [
- "photocraft-color",
- "photocraft-doc",
- "photocraft-geom",
- "photocraft-raster",
+ "pixelwright-color",
+ "pixelwright-doc",
+ "pixelwright-geom",
+ "pixelwright-raster",
  "rayon",
 ]
 
 [[package]]
-name = "photocraft-web"
+name = "pixelwright-web"
 version = "0.5.0"
 dependencies = [
  "eframe",
  "egui",
  "js-sys",
  "log",
- "photocraft-codecs",
- "photocraft-doc",
- "photocraft-engine",
- "photocraft-io",
- "photocraft-ui-egui",
+ "pixelwright-codecs",
+ "pixelwright-doc",
+ "pixelwright-engine",
+ "pixelwright-io",
+ "pixelwright-ui-egui",
  "rfd",
  "wasm-bindgen",
  "wasm-bindgen-futures",

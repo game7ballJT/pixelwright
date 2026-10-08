@@ -1,6 +1,6 @@
 # Summary
 
-[PhotoCraft Documentation](README.md)
+[Pixelwright Documentation](README.md)
 
 # Getting started
 
@@ -21,7 +21,7 @@
 - [Overview](formats/overview.md)
 - [PSD and PSB](formats/psd-psb.md)
 - [Raster formats](formats/raster-formats.md)
-- [The `.pcraft` format](formats/pcraft.md)
+- [The `.pxwr` format](formats/pxwr.md)
 
 # Automation
 

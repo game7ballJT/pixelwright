@@ -5,9 +5,9 @@
 //! The selection itself lives in [`DocState::selected_layers`] (UI state, like the active layer):
 //! changing it never adds a history step. Every structural change below is one history step.
 
-use photocraft_color::PixelFormat;
-use photocraft_doc::{Document, Layer, LayerContent, LayerId};
-use photocraft_geom::Rect;
+use pixelwright_color::PixelFormat;
+use pixelwright_doc::{Document, Layer, LayerContent, LayerId};
+use pixelwright_geom::Rect;
 use serde_json::{Value, json};
 
 use crate::commands::{CommandSpec, int_i32};
@@ -287,11 +287,11 @@ pub fn moved(doc: &Document, ids: &[LayerId], dx: i32, dy: i32) -> Result<Docume
     Ok(out)
 }
 
-/// `photocraft_algo::resample::translate_surface` with the content scan cached per tile (a Move
+/// `pixelwright_algo::resample::translate_surface` with the content scan cached per tile (a Move
 /// drag shifts the same layers every frame; scanning them each time cost more than the copy).
-pub(crate) fn shift_surface(s: &photocraft_raster::Surface, dx: i32, dy: i32) -> photocraft_raster::Surface {
-    let mut out = photocraft_raster::Surface::with_default(s.format(), &s.default_pixel());
-    let r = photocraft_compose::bounds::content_bounds(s);
+pub(crate) fn shift_surface(s: &pixelwright_raster::Surface, dx: i32, dy: i32) -> pixelwright_raster::Surface {
+    let mut out = pixelwright_raster::Surface::with_default(s.format(), &s.default_pixel());
+    let r = pixelwright_compose::bounds::content_bounds(s);
     if !r.is_empty() {
         out.write_interleaved(r.translate(dx, dy), &s.to_interleaved(r));
     }
@@ -301,7 +301,7 @@ pub(crate) fn shift_surface(s: &photocraft_raster::Surface, dx: i32, dy: i32) ->
 /// [`crate::commands::translate_layer`] plus the vector side, without re-rendering anything.
 fn shift_shown(doc: &Document, l: &mut Layer, dx: i32, dy: i32) {
     use self::shift_surface as translate_surface;
-    let a = photocraft_geom::Affine::translate(f64::from(dx), f64::from(dy));
+    let a = pixelwright_geom::Affine::translate(f64::from(dx), f64::from(dy));
     if let Some(r) = &mut l.effects.reference {
         *r = (r.0 + f64::from(dx), r.1 + f64::from(dy));
     }
@@ -323,7 +323,7 @@ fn shift_shown(doc: &Document, l: &mut Layer, dx: i32, dy: i32) {
             // The rendered shape is cut at the canvas: one that reaches past it renders again.
             let canvas = doc.bounds();
             let inside = sh.cache.as_ref().is_some_and(|c| {
-                let b = photocraft_compose::bounds::content_bounds(c);
+                let b = pixelwright_compose::bounds::content_bounds(c);
                 b.is_empty() || (b.x0 > canvas.x0 && b.y0 > canvas.y0 && b.x1 < canvas.x1 && b.y1 < canvas.y1)
             });
             crate::vector_cmds::transform_shape(sh, &a);
@@ -351,7 +351,7 @@ pub fn layers_damage(before: &Document, after: &Document, ids: &[LayerId]) -> Op
         let canvas = d.bounds();
         for id in ids {
             // A layer gone from one side (never for a move) changes who knows what.
-            let b = photocraft_compose::change_bounds(d.layer(*id)?, canvas)?;
+            let b = pixelwright_compose::change_bounds(d.layer(*id)?, canvas)?;
             if !b.is_empty() {
                 out = if out.is_empty() { b } else { out.union(&b) };
             }
@@ -614,12 +614,12 @@ fn reverse(s: &mut Session) -> Result<Value> {
     Ok(Value::Null)
 }
 
-/// Refuses an edit that left `doc` nested deeper than [`photocraft_doc::MAX_GROUP_DEPTH`]
+/// Refuses an edit that left `doc` nested deeper than [`pixelwright_doc::MAX_GROUP_DEPTH`]
 /// groups. Called at the end of a `Session::edit` closure, so an `Err` leaves the document and
 /// history untouched.
 pub(crate) fn check_group_depth(doc: &Document, what: &str) -> Result<()> {
-    if doc.max_group_depth() > photocraft_doc::MAX_GROUP_DEPTH {
-        return Err(EngineError::Other(format!("{what} would nest layers deeper than {} groups", photocraft_doc::MAX_GROUP_DEPTH)));
+    if doc.max_group_depth() > pixelwright_doc::MAX_GROUP_DEPTH {
+        return Err(EngineError::Other(format!("{what} would nest layers deeper than {} groups", pixelwright_doc::MAX_GROUP_DEPTH)));
     }
     Ok(())
 }
@@ -667,10 +667,10 @@ fn merge_layers(s: &mut Session) -> Result<Value> {
         if solo.layers.is_empty() {
             return Err(EngineError::Other("the selected layers are all hidden".into()));
         }
-        let buf = photocraft_compose::flatten(&solo);
+        let buf = pixelwright_compose::flatten(&solo);
         let fmt = doc.pixel_format();
         let fmt = PixelFormat::new(fmt.mode, fmt.sample, true);
-        let data: Vec<f32> = buf.px.iter().flat_map(|p| photocraft_raster::from_rgba(&fmt, *p)).collect();
+        let data: Vec<f32> = buf.px.iter().flat_map(|p| pixelwright_raster::from_rgba(&fmt, *p)).collect();
         let mut merged = Layer::raster(top.name.clone(), fmt);
         merged.locks = top.locks;
         let surf = crate::pixels_mut(&mut merged)?;
@@ -1190,17 +1190,17 @@ mod tests {
         let mut s = session(8);
         let a = rect_layer(&mut s, Rect::new(0, 0, 5, 5));
         select_all(&mut s, &[a]);
-        for _ in 0..photocraft_doc::MAX_GROUP_DEPTH {
+        for _ in 0..pixelwright_doc::MAX_GROUP_DEPTH {
             s.execute("layer.groupLayers", json!({})).unwrap();
         }
-        assert_eq!(doc(&s).max_group_depth(), photocraft_doc::MAX_GROUP_DEPTH);
+        assert_eq!(doc(&s).max_group_depth(), pixelwright_doc::MAX_GROUP_DEPTH);
         // One more wrapping group would pass the cap: rejected, document untouched.
         let err = s.execute("layer.groupLayers", json!({})).unwrap_err();
         assert!(err.to_string().contains("deeper than 100"), "{err}");
-        assert_eq!(doc(&s).max_group_depth(), photocraft_doc::MAX_GROUP_DEPTH);
+        assert_eq!(doc(&s).max_group_depth(), pixelwright_doc::MAX_GROUP_DEPTH);
         // The rejected call recorded no history step: undo still lands one grouping earlier.
         s.undo();
-        assert_eq!(doc(&s).max_group_depth(), photocraft_doc::MAX_GROUP_DEPTH - 1);
+        assert_eq!(doc(&s).max_group_depth(), pixelwright_doc::MAX_GROUP_DEPTH - 1);
     }
 
     #[test]

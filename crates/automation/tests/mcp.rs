@@ -3,7 +3,7 @@
 use std::io::Write;
 
 use base64::Engine as _;
-use photocraft_automation::{AuthorizedWorkspace, PhotocraftMcp};
+use pixelwright_automation::{AuthorizedWorkspace, PixelwrightMcp};
 use rmcp::model::{CallToolRequestParams, CallToolResult, ClientConfig};
 use rmcp::service::RunningService;
 use rmcp::{ClientHandler, RoleClient, ServiceExt};
@@ -20,7 +20,7 @@ impl ClientHandler for Client {
     }
 }
 
-async fn connect(server: PhotocraftMcp) -> RunningService<RoleClient, Client> {
+async fn connect(server: PixelwrightMcp) -> RunningService<RoleClient, Client> {
     let (s, c) = tokio::io::duplex(1 << 20);
     tokio::spawn(async move {
         if let Ok(running) = server.serve(s).await {
@@ -65,14 +65,14 @@ fn cleanup(path: &std::path::Path) {
     std::fs::remove_dir_all(path).expect("remove test workspace after server shutdown");
 }
 
-fn headless_in(root: &std::path::Path) -> PhotocraftMcp {
+fn headless_in(root: &std::path::Path) -> PixelwrightMcp {
     let workspace = AuthorizedWorkspace::new(Some(root), Some(root)).expect("test workspace");
-    PhotocraftMcp::headless_with_workspace(workspace)
+    PixelwrightMcp::headless_with_workspace(workspace)
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn lists_expected_tools() {
-    let client = connect(PhotocraftMcp::headless()).await;
+    let client = connect(PixelwrightMcp::headless()).await;
     let tools = client.list_all_tools().await.unwrap();
     let names: Vec<String> = tools.iter().map(|t| t.name.to_string()).collect();
     for n in [
@@ -102,7 +102,7 @@ async fn lists_expected_tools() {
         assert!(t.description.as_ref().is_some_and(|d| !d.is_empty()));
     }
     let info = client.peer_info().expect("server info");
-    assert_eq!(info.server_info.as_ref().unwrap().name, "photocraft");
+    assert_eq!(info.server_info.as_ref().unwrap().name, "pixelwright");
     assert!(info.instructions.as_ref().is_some_and(|i| i.contains("command_list")));
     client.cancel().await.unwrap();
 }
@@ -129,20 +129,20 @@ async fn headless_edit_render_save_roundtrip() {
     let img = r.content.iter().find_map(|c| c.as_image()).expect("image content");
     assert_eq!(img.mime_type, "image/png");
     let png = base64::engine::general_purpose::STANDARD.decode(&img.data).unwrap();
-    let decoded = photocraft_codecs::decode(&png).unwrap();
+    let decoded = pixelwright_codecs::decode(&png).unwrap();
     assert_eq!(decoded.dimensions(), (32, 24));
 
-    let r = json_of(&call(&client, "doc_save", json!({"path": "agent.pcraft"})).await);
-    assert_eq!(r["path"], "agent.pcraft");
+    let r = json_of(&call(&client, "doc_save", json!({"path": "agent.pxwr"})).await);
+    assert_eq!(r["path"], "agent.pxwr");
     let png_path = dir.join("agent.png");
     json_of(&call(&client, "doc_export", json!({"path": "agent.png"})).await);
     let jpg_path = dir.join("agent.jpg");
     json_of(&call(&client, "doc_export", json!({"path": "agent.jpg", "quality": 70})).await);
-    assert!(photocraft_codecs::decode(&std::fs::read(&png_path).unwrap()).is_ok());
+    assert!(pixelwright_codecs::decode(&std::fs::read(&png_path).unwrap()).is_ok());
     assert!(std::fs::metadata(&jpg_path).unwrap().len() > 100);
 
     // Re-open the native file: identical layer tree.
-    let o = json_of(&call(&client, "doc_open", json!({"path": "agent.pcraft"})).await);
+    let o = json_of(&call(&client, "doc_open", json!({"path": "agent.pxwr"})).await);
     assert_eq!(o["index"], 1);
     let doc2 = json_of(&call(&client, "doc_inspect", json!({"index": 1})).await);
     assert_eq!(doc2["layers"].as_array().unwrap().len(), 2);
@@ -156,7 +156,7 @@ async fn headless_edit_render_save_roundtrip() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn command_list_filters() {
-    let client = connect(PhotocraftMcp::headless()).await;
+    let client = connect(PixelwrightMcp::headless()).await;
     let all = json_of(&call(&client, "command_list", json!({})).await);
     let n_all = all.as_array().unwrap().len();
     assert!(n_all > 20);
@@ -186,7 +186,7 @@ fn id_examples(schema: &Value, out: &mut Vec<String>) {
 #[tokio::test(flavor = "multi_thread")]
 async fn command_ids_in_tool_schemas_exist() {
     // Agents copy these examples verbatim (#378).
-    let client = connect(PhotocraftMcp::headless()).await;
+    let client = connect(PixelwrightMcp::headless()).await;
     let all = json_of(&call(&client, "command_list", json!({})).await);
     let ids: Vec<&str> = all.as_array().unwrap().iter().filter_map(|c| c["id"].as_str()).collect();
     let tools = client.list_all_tools().await.unwrap();
@@ -204,7 +204,7 @@ async fn command_ids_in_tool_schemas_exist() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn errors_are_tool_errors_not_crashes() {
-    let client = connect(PhotocraftMcp::headless()).await;
+    let client = connect(PixelwrightMcp::headless()).await;
     let r = call(&client, "command_run", json!({"id": "no.such.command"})).await;
     assert_eq!(r.is_error, Some(true));
     assert!(text(&r).contains("unknown command"));
@@ -224,7 +224,7 @@ async fn errors_are_tool_errors_not_crashes() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn preview_budget_failure_preserves_the_mcp_session() {
-    let client = connect(PhotocraftMcp::headless()).await;
+    let client = connect(PixelwrightMcp::headless()).await;
     json_of(&call(&client, "doc_new", json!({"width": 2049, "height": 1})).await);
     for side in [0, 2049] {
         let reply = call(&client, "doc_render_preview", json!({"max_side": side})).await;
@@ -240,7 +240,7 @@ async fn preview_budget_failure_preserves_the_mcp_session() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn bridge_response_budget_drops_connection_without_retrying_the_operation() {
-    use photocraft_automation::{BridgeClient, budgets::MAX_RESPONSE_BYTES};
+    use pixelwright_automation::{BridgeClient, budgets::MAX_RESPONSE_BYTES};
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap().to_string();
     let app = tokio::spawn(async move {
@@ -275,9 +275,9 @@ async fn bridge_response_budget_drops_connection_without_retrying_the_operation(
 #[tokio::test(flavor = "multi_thread")]
 async fn open_png_and_inspect() {
     let dir = tmp("open");
-    let img = photocraft_codecs::Image::from_u8(8, 4, photocraft_codecs::ChannelLayout::Rgb, vec![200; 96]).unwrap();
+    let img = pixelwright_codecs::Image::from_u8(8, 4, pixelwright_codecs::ChannelLayout::Rgb, vec![200; 96]).unwrap();
     let path = dir.join("in.png");
-    std::fs::File::create(&path).unwrap().write_all(&photocraft_codecs::encode(&img, photocraft_codecs::Format::Png, &Default::default()).unwrap()).unwrap();
+    std::fs::File::create(&path).unwrap().write_all(&pixelwright_codecs::encode(&img, pixelwright_codecs::Format::Png, &Default::default()).unwrap()).unwrap();
     let client = connect(headless_in(&dir)).await;
     let o = json_of(&call(&client, "doc_open", json!({"path": "in.png"})).await);
     assert_eq!((o["width"].as_u64(), o["height"].as_u64()), (Some(8), Some(4)));
@@ -291,7 +291,7 @@ async fn open_png_and_inspect() {
 #[tokio::test(flavor = "multi_thread")]
 async fn open_reports_decode_warnings() {
     let dir = tmp("open-warnings");
-    let jpeg = write_image(&dir, "whole.jpg", photocraft_codecs::Format::Jpeg);
+    let jpeg = write_image(&dir, "whole.jpg", pixelwright_codecs::Format::Jpeg);
     std::fs::write(dir.join("cut.jpg"), &jpeg[..jpeg.len() - 4]).unwrap();
     // Two 1x1 frames.
     let mut gif = b"GIF89a\x01\0\x01\0\x80\0\0\0\0\0\xFF\xFF\xFF".to_vec();
@@ -309,9 +309,9 @@ async fn open_reports_decode_warnings() {
     cleanup(&dir);
 }
 
-fn write_image(dir: &std::path::Path, name: &str, format: photocraft_codecs::Format) -> Vec<u8> {
-    let img = photocraft_codecs::Image::from_u8(16, 8, photocraft_codecs::ChannelLayout::Rgb, (0..384).map(|i| (i * 7 % 251) as u8).collect()).unwrap();
-    let bytes = photocraft_codecs::encode(&img, format, &Default::default()).unwrap();
+fn write_image(dir: &std::path::Path, name: &str, format: pixelwright_codecs::Format) -> Vec<u8> {
+    let img = pixelwright_codecs::Image::from_u8(16, 8, pixelwright_codecs::ChannelLayout::Rgb, (0..384).map(|i| (i * 7 % 251) as u8).collect()).unwrap();
+    let bytes = pixelwright_codecs::encode(&img, format, &Default::default()).unwrap();
     std::fs::write(dir.join(name), &bytes).unwrap();
     bytes
 }
@@ -320,8 +320,8 @@ fn write_image(dir: &std::path::Path, name: &str, format: photocraft_codecs::For
 #[tokio::test(flavor = "multi_thread")]
 async fn save_without_path_never_flattens_over_the_opened_file() {
     let dir = tmp("save-in-place");
-    let png = write_image(&dir, "seed.png", photocraft_codecs::Format::Png);
-    let jpg = write_image(&dir, "seed.jpg", photocraft_codecs::Format::Jpeg);
+    let png = write_image(&dir, "seed.png", pixelwright_codecs::Format::Png);
+    let jpg = write_image(&dir, "seed.jpg", pixelwright_codecs::Format::Jpeg);
     let client = connect(headless_in(&dir)).await;
     let refused = |r: &CallToolResult| r.is_error == Some(true) && text(r).contains("pass `path`");
 
@@ -349,12 +349,12 @@ async fn save_without_path_never_flattens_over_the_opened_file() {
     assert!(refused(&r), "{}", text(&r));
     assert_eq!(std::fs::read(dir.join("layered.psd")).unwrap(), psd);
     assert_eq!(json_of(&call(&client, "doc_save", json!({})).await)["path"], "layered.psd");
-    assert!(photocraft_io::is_psd(&std::fs::read(dir.join("layered.psd")).unwrap()));
+    assert!(pixelwright_io::is_psd(&std::fs::read(dir.join("layered.psd")).unwrap()));
 
-    // Once saved as .pcraft, a flat-born document saves in place there.
+    // Once saved as .pxwr, a flat-born document saves in place there.
     json_of(&call(&client, "doc_select", json!({"index": 0})).await);
-    json_of(&call(&client, "doc_save", json!({"path": "work.pcraft"})).await);
-    assert_eq!(json_of(&call(&client, "doc_save", json!({})).await)["path"], "work.pcraft");
+    json_of(&call(&client, "doc_save", json!({"path": "work.pxwr"})).await);
+    assert_eq!(json_of(&call(&client, "doc_save", json!({})).await)["path"], "work.pxwr");
     assert_eq!(std::fs::read(dir.join("seed.png")).unwrap(), png);
 
     // A template opens untitled, without its path.
@@ -375,8 +375,8 @@ async fn filesystem_policy_rejects_absolute_and_escaping_paths_before_effects() 
     std::fs::create_dir_all(&root).unwrap();
     std::fs::create_dir_all(&outside).unwrap();
 
-    let img = photocraft_codecs::Image::from_u8(4, 3, photocraft_codecs::ChannelLayout::Rgb, vec![42; 36]).unwrap();
-    let bytes = photocraft_codecs::encode(&img, photocraft_codecs::Format::Png, &Default::default()).unwrap();
+    let img = pixelwright_codecs::Image::from_u8(4, 3, pixelwright_codecs::ChannelLayout::Rgb, vec![42; 36]).unwrap();
+    let bytes = pixelwright_codecs::encode(&img, pixelwright_codecs::Format::Png, &Default::default()).unwrap();
     std::fs::write(root.join("inside.png"), bytes).unwrap();
     let client = connect(headless_in(&root)).await;
 
@@ -442,8 +442,8 @@ async fn fake_app_with_screenshot(screenshot_png: Option<Vec<u8>>) -> (String, t
                 "ui.pointer" => json!({"id": id, "ok": true, "result": req["params"]}),
                 "ui.screenshot" => {
                     let bytes = screenshot_png.clone().unwrap_or_else(|| {
-                        let img = photocraft_codecs::Image::from_u8(40, 20, photocraft_codecs::ChannelLayout::Rgba, vec![9; 3200]).unwrap();
-                        photocraft_codecs::encode(&img, photocraft_codecs::Format::Png, &Default::default()).unwrap()
+                        let img = pixelwright_codecs::Image::from_u8(40, 20, pixelwright_codecs::ChannelLayout::Rgba, vec![9; 3200]).unwrap();
+                        pixelwright_codecs::encode(&img, pixelwright_codecs::Format::Png, &Default::default()).unwrap()
                     });
                     let png = base64::engine::general_purpose::STANDARD.encode(bytes);
                     json!({"id": id, "ok": true, "result": {"mimeType": "image/png", "base64": png}})
@@ -463,7 +463,7 @@ async fn fake_app_with_screenshot(screenshot_png: Option<Vec<u8>>) -> (String, t
 #[tokio::test(flavor = "multi_thread")]
 async fn bridge_forwards_to_control_protocol() {
     let (addr, app) = fake_app().await;
-    let client = connect(PhotocraftMcp::bridge(&addr, CONTROL_TOKEN).unwrap()).await;
+    let client = connect(PixelwrightMcp::bridge(&addr, CONTROL_TOKEN).unwrap()).await;
 
     let ui = json_of(&call(&client, "ui_inspect", json!({})).await);
     assert_eq!(ui["tool"], "brush");
@@ -477,7 +477,7 @@ async fn bridge_forwards_to_control_protocol() {
     let shot = call(&client, "ui_screenshot", json!({"max_side": 20})).await;
     let img = shot.content.iter().find_map(|c| c.as_image()).expect("image");
     let png = base64::engine::general_purpose::STANDARD.decode(&img.data).unwrap();
-    assert_eq!(photocraft_codecs::decode(&png).unwrap().dimensions(), (20, 10));
+    assert_eq!(pixelwright_codecs::decode(&png).unwrap().dimensions(), (20, 10));
     let e = call(&client, "control_call", json!({"method": "bogus.method"})).await;
     assert_eq!(e.is_error, Some(true));
     assert!(text(&e).contains("unknown tool"));
@@ -490,7 +490,7 @@ async fn bridge_forwards_to_control_protocol() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn bridge_previews_downscale_before_enforcing_the_png_budget() {
-    use photocraft_automation::budgets::MAX_PNG_BYTES;
+    use pixelwright_automation::budgets::MAX_PNG_BYTES;
 
     let (width, height) = (1400, 1000);
     let mut pixels = vec![0; width * height * 4];
@@ -501,12 +501,12 @@ async fn bridge_previews_downscale_before_enforcing_the_png_budget() {
         state ^= state << 5;
         *pixel = state as u8;
     }
-    let image = photocraft_codecs::Image::from_u8(width as u32, height as u32, photocraft_codecs::ChannelLayout::Rgba, pixels).unwrap();
-    let source_png = photocraft_codecs::encode(&image, photocraft_codecs::Format::Png, &Default::default()).unwrap();
+    let image = pixelwright_codecs::Image::from_u8(width as u32, height as u32, pixelwright_codecs::ChannelLayout::Rgba, pixels).unwrap();
+    let source_png = pixelwright_codecs::encode(&image, pixelwright_codecs::Format::Png, &Default::default()).unwrap();
     assert!(source_png.len() > MAX_PNG_BYTES, "fixture must exceed the PNG budget");
 
     let (addr, app) = fake_app_with_screenshot(Some(source_png)).await;
-    let client = connect(PhotocraftMcp::bridge(&addr, CONTROL_TOKEN).unwrap()).await;
+    let client = connect(PixelwrightMcp::bridge(&addr, CONTROL_TOKEN).unwrap()).await;
 
     for (tool, args) in [("ui_screenshot", json!({"max_side": 32})), ("doc_render_preview", json!({"max_side": 32}))] {
         let reply = call(&client, tool, args).await;
@@ -514,7 +514,7 @@ async fn bridge_previews_downscale_before_enforcing_the_png_budget() {
         let img = reply.content.iter().find_map(|content| content.as_image()).expect("preview image");
         let png = base64::engine::general_purpose::STANDARD.decode(&img.data).unwrap();
         assert!(png.len() <= MAX_PNG_BYTES, "{tool} returned {} bytes", png.len());
-        let decoded = photocraft_codecs::decode(&png).unwrap();
+        let decoded = pixelwright_codecs::decode(&png).unwrap();
         assert_eq!(decoded.dimensions(), (32, 22), "{tool}");
     }
 
@@ -528,17 +528,17 @@ async fn bridge_previews_downscale_before_enforcing_the_png_budget() {
 
 #[test]
 fn bridge_rejects_non_loopback() {
-    assert!(PhotocraftMcp::bridge("10.0.0.5:7878", CONTROL_TOKEN).is_err());
-    assert!(PhotocraftMcp::bridge("127.0.0.1:7878", CONTROL_TOKEN).is_ok());
-    assert!(PhotocraftMcp::bridge("localhost:1", CONTROL_TOKEN).is_ok());
-    assert!(PhotocraftMcp::bridge("localhost:1", "short").is_err());
+    assert!(PixelwrightMcp::bridge("10.0.0.5:7878", CONTROL_TOKEN).is_err());
+    assert!(PixelwrightMcp::bridge("127.0.0.1:7878", CONTROL_TOKEN).is_ok());
+    assert!(PixelwrightMcp::bridge("localhost:1", CONTROL_TOKEN).is_ok());
+    assert!(PixelwrightMcp::bridge("localhost:1", "short").is_err());
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn bridge_rejects_wrong_token_before_control_methods() {
     let (addr, app) = fake_app().await;
     let wrong = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    let client = connect(PhotocraftMcp::bridge(&addr, wrong).unwrap()).await;
+    let client = connect(PixelwrightMcp::bridge(&addr, wrong).unwrap()).await;
     let r = call(&client, "ui_inspect", json!({})).await;
     assert_eq!(r.is_error, Some(true));
     assert!(text(&r).contains("authentication required"), "{}", text(&r));
@@ -548,7 +548,7 @@ async fn bridge_rejects_wrong_token_before_control_methods() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn bridge_reports_unreachable_app() {
-    let client = connect(PhotocraftMcp::bridge("127.0.0.1:1", CONTROL_TOKEN).unwrap()).await;
+    let client = connect(PixelwrightMcp::bridge("127.0.0.1:1", CONTROL_TOKEN).unwrap()).await;
     let r = call(&client, "ui_inspect", json!({})).await;
     assert_eq!(r.is_error, Some(true));
     assert!(text(&r).contains("--control"), "{}", text(&r));
@@ -557,7 +557,7 @@ async fn bridge_reports_unreachable_app() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn command_batch_runs_steps_in_order() {
-    let client = connect(PhotocraftMcp::headless()).await;
+    let client = connect(PixelwrightMcp::headless()).await;
     json_of(&call(&client, "doc_new", json!({"width": 32, "height": 32})).await);
     let r = json_of(
         &call(
@@ -581,7 +581,7 @@ async fn command_batch_runs_steps_in_order() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn command_batch_step_without_waiting_starts_a_background_job() {
-    let client = connect(PhotocraftMcp::headless()).await;
+    let client = connect(PixelwrightMcp::headless()).await;
     json_of(&call(&client, "doc_new", json!({"width": 600, "height": 400})).await);
     let blur = json!({"id": "filter.blur.gaussianBlur", "params": {"radius": 40}, "wait": false});
     let r = json_of(
@@ -612,7 +612,7 @@ async fn command_batch_step_without_waiting_starts_a_background_job() {
 #[tokio::test(flavor = "multi_thread")]
 async fn bridge_command_batch_forwards_each_steps_wait() {
     let (addr, app) = fake_app().await;
-    let client = connect(PhotocraftMcp::bridge(&addr, CONTROL_TOKEN).unwrap()).await;
+    let client = connect(PixelwrightMcp::bridge(&addr, CONTROL_TOKEN).unwrap()).await;
     let r = json_of(&call(&client, "command_batch", json!({"steps": [{"id": "filter.blur.gaussianBlur", "wait": false}, {"id": "layer.new.layer"}]})).await);
     assert_eq!(r["completed"], 2, "{r}");
     assert_eq!(r["results"][0]["result"]["wait"], false, "{r}");
@@ -626,7 +626,7 @@ async fn bridge_command_batch_forwards_each_steps_wait() {
 #[tokio::test(flavor = "multi_thread")]
 async fn bridge_ui_pointer_forwards_the_button_and_rejects_unknown_arguments() {
     let (addr, app) = fake_app().await;
-    let client = connect(PhotocraftMcp::bridge(&addr, CONTROL_TOKEN).unwrap()).await;
+    let client = connect(PixelwrightMcp::bridge(&addr, CONTROL_TOKEN).unwrap()).await;
     let events = json!([{"kind": "down", "x": 5, "y": 6}, {"kind": "up", "x": 5, "y": 6}]);
     let sent = json_of(&call(&client, "ui_pointer", json!({"events": events, "button": "right", "modifiers": {"command": true}})).await);
     assert_eq!(sent, json!({"events": events, "button": "right", "modifiers": {"command": true}}));
@@ -648,7 +648,7 @@ async fn bridge_ui_pointer_forwards_the_button_and_rejects_unknown_arguments() {
 /// #368: agents can open the clipboard as a document of its own.
 #[tokio::test(flavor = "multi_thread")]
 async fn new_from_clipboard_opens_the_copy_as_a_document() {
-    let client = connect(PhotocraftMcp::headless()).await;
+    let client = connect(PixelwrightMcp::headless()).await;
     json_of(&call(&client, "doc_new", json!({"width": 40, "height": 30})).await);
     let r = json_of(
         &call(
@@ -672,8 +672,8 @@ async fn new_from_clipboard_opens_the_copy_as_a_document() {
 
 #[tokio::test(flavor = "multi_thread")]
 async fn command_batch_rejects_too_many_steps() {
-    let client = connect(PhotocraftMcp::headless()).await;
-    let steps: Vec<Value> = (0..=photocraft_automation::security::MAX_BATCH_STEPS).map(|_| json!({"id": "command.list"})).collect();
+    let client = connect(PixelwrightMcp::headless()).await;
+    let steps: Vec<Value> = (0..=pixelwright_automation::security::MAX_BATCH_STEPS).map(|_| json!({"id": "command.list"})).collect();
     let r = call(&client, "command_batch", json!({"steps": steps})).await;
     assert_eq!(r.is_error, Some(true));
     assert!(text(&r).contains("maximum is 256"), "{}", text(&r));

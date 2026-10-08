@@ -1,7 +1,7 @@
 //! Filter › Camera Raw Filter…: a large dialog like Adobe Camera Raw's (preview on the left,
 //! edit panels on the right: Light, Color, Effects, Curve, Color Mixer, Color Grading, Detail).
 //!
-//! The preview runs [`photocraft_algo::camera_raw::develop`] on a CPU proxy of the layer
+//! The preview runs [`pixelwright_algo::camera_raw::develop`] on a CPU proxy of the layer
 //! (≤ 900 px, `pixel_scale` keeps pixel radii true to the full image), recomputed when a
 //! control changes. OK runs `filter.cameraRaw` with the non-default settings, so the result is
 //! one history step (or a smart filter on a smart object) and exactly replayable.
@@ -10,15 +10,15 @@
 //! "commit":true | "cancel":true}}}`; the reply describes the dialog.
 
 use egui::{Align2, Color32, FontId, Pos2, Rect as ERect, Sense, Stroke, TextureHandle, pos2, vec2};
-use photocraft_algo::camera_raw::{CameraRaw, Wheel, curve_lut};
-use photocraft_algo::histogram::RgbHistogram;
+use pixelwright_algo::camera_raw::{CameraRaw, Wheel, curve_lut};
+use pixelwright_algo::histogram::RgbHistogram;
 
 use crate::camera_raw_scope_ui::{MAX_SAMPLERS, ToneZone};
-use photocraft_doc::LayerId;
-use photocraft_geom::Rect;
+use pixelwright_doc::LayerId;
+use pixelwright_geom::Rect;
 use serde_json::{Value, json};
 
-use crate::PhotocraftApp;
+use crate::PixelwrightApp;
 use crate::theme::Tokens;
 use crate::widgets;
 
@@ -50,8 +50,8 @@ pub struct CameraRawDialog {
     before_tex: Option<TextureHandle>,
     pub(crate) before_histogram: RgbHistogram,
     pub(crate) processed: Vec<[f32; 4]>,
-    pub(crate) lab_transform: std::sync::Arc<photocraft_cms::Transform>,
-    pub(crate) scope_transform: std::sync::Arc<photocraft_cms::Transform>,
+    pub(crate) lab_transform: std::sync::Arc<pixelwright_cms::Transform>,
+    pub(crate) scope_transform: std::sync::Arc<pixelwright_cms::Transform>,
     pub(crate) scope: super::camera_raw_scope_ui::ScopeView,
     pub(crate) after_histogram: RgbHistogram,
     pub(crate) preview_revision: u64,
@@ -133,7 +133,7 @@ impl CameraRawDialog {
         let mut px = self.proxy.clone();
         let mut p = self.params.clone();
         p.pixel_scale = (self.pw as f32 / self.full_w.max(1) as f32).min(1.0);
-        photocraft_algo::camera_raw::develop(&mut px, self.pw, self.ph, &p, self.float);
+        pixelwright_algo::camera_raw::develop(&mut px, self.pw, self.ph, &p, self.float);
         if let Some(mask) = &self.selection {
             for ((out, original), coverage) in px.iter_mut().zip(&self.proxy).zip(mask) {
                 for (out, original) in out.iter_mut().zip(original) {
@@ -172,12 +172,12 @@ enum Target {
 /// engine does), a smart object's filter mask, or nothing.
 enum Coverage {
     Selection,
-    Mask(photocraft_doc::LayerMask),
+    Mask(pixelwright_doc::LayerMask),
     None,
 }
 
-pub fn open(app: &mut PhotocraftApp, ctx: &egui::Context) -> Result<(), String> {
-    photocraft_engine::commands::find("filter.cameraRaw").map(|c| (c.enabled)(&app.session)).unwrap_or(Err("unknown command".into()))?;
+pub fn open(app: &mut PixelwrightApp, ctx: &egui::Context) -> Result<(), String> {
+    pixelwright_engine::commands::find("filter.cameraRaw").map(|c| (c.enabled)(&app.session)).unwrap_or(Err("unknown command".into()))?;
     let (layer, surf, _) = crate::distort_ui::active_pixels(app)?;
     open_pixels(app, ctx, layer, surf, CameraRaw::default(), Coverage::Selection, Target::NewFilter)
 }
@@ -185,10 +185,10 @@ pub fn open(app: &mut PhotocraftApp, ctx: &egui::Context) -> Result<(), String> 
 /// Opens Camera Raw on smart filter `index` of smart layer `layer`, with its stored settings and
 /// the pixels below it; OK updates that filter (`layer.smartFilter.setParams`), as double-clicking
 /// a Camera Raw smart filter does in Photoshop.
-pub fn open_smart_filter(app: &mut PhotocraftApp, ctx: &egui::Context, layer: LayerId, index: usize) -> Result<(), String> {
-    use photocraft_engine::lens_cmds::{RAW, raw_params};
+pub fn open_smart_filter(app: &mut PixelwrightApp, ctx: &egui::Context, layer: LayerId, index: usize) -> Result<(), String> {
+    use pixelwright_engine::lens_cmds::{RAW, raw_params};
     let st = app.session.active().ok_or("no document")?;
-    let Some(photocraft_doc::LayerContent::Smart(sm)) = st.doc.layer(layer).map(|l| &l.content) else {
+    let Some(pixelwright_doc::LayerContent::Smart(sm)) = st.doc.layer(layer).map(|l| &l.content) else {
         return Err("the layer is not a smart object".into());
     };
     let filter = sm.smart_filters.get(index).ok_or("no such smart filter")?;
@@ -196,7 +196,7 @@ pub fn open_smart_filter(app: &mut PhotocraftApp, ctx: &egui::Context, layer: La
         return Err("the smart filter is not a Camera Raw filter".into());
     }
     let params = raw_params(RAW, &filter.params).map_err(|e| e.to_string())?;
-    let surf = photocraft_engine::smart_cmds::render_below_filter(&st.doc, sm, index)
+    let surf = pixelwright_engine::smart_cmds::render_below_filter(&st.doc, sm, index)
         .map_err(|e| e.to_string())?
         .ok_or("the smart object's contents are unavailable (missing linked file?)")?;
     let coverage = sm.filter_mask.clone().filter(|m| m.enabled).map_or(Coverage::None, Coverage::Mask);
@@ -204,10 +204,10 @@ pub fn open_smart_filter(app: &mut PhotocraftApp, ctx: &egui::Context, layer: La
 }
 
 fn open_pixels(
-    app: &mut PhotocraftApp,
+    app: &mut PixelwrightApp,
     ctx: &egui::Context,
     layer: LayerId,
-    surf: photocraft_raster::Surface,
+    surf: pixelwright_raster::Surface,
     params: CameraRaw,
     coverage: Coverage,
     target: Target,
@@ -261,9 +261,9 @@ fn open_pixels(
         Coverage::Mask(mask) => Some(sample(&|x, y| mask.value(x, y))),
         Coverage::None => None,
     };
-    let source = photocraft_engine::color_cmds::composite_profile(&st.doc);
-    let lab_transform = photocraft_cms::cached(&source, photocraft_cms::Builtin::LabD50.profile(), Default::default()).map_err(|e| e.to_string())?;
-    let scope_transform = photocraft_cms::cached(&source, photocraft_cms::Builtin::Srgb.profile(), Default::default()).map_err(|e| e.to_string())?;
+    let source = pixelwright_engine::color_cmds::composite_profile(&st.doc);
+    let lab_transform = pixelwright_cms::cached(&source, pixelwright_cms::Builtin::LabD50.profile(), Default::default()).map_err(|e| e.to_string())?;
+    let scope_transform = pixelwright_cms::cached(&source, pixelwright_cms::Builtin::Srgb.profile(), Default::default()).map_err(|e| e.to_string())?;
     if let Some(saved) = app.session.prefs().dialogs.get("filter.cameraRaw.scope")
         && saved.get("samplers").and_then(Value::as_array).is_none_or(|a| a.len() <= MAX_SAMPLERS)
         && let Ok(view) = serde_json::from_value(saved.clone())
@@ -277,7 +277,7 @@ fn open_pixels(
     if selection.is_none() {
         app.ui.camera_raw_scope.selected_region = false;
     }
-    let float = surf.format().sample == photocraft_color::SampleType::F32;
+    let float = surf.format().sample == pixelwright_color::SampleType::F32;
     let mut d = CameraRawDialog {
         layer,
         layer_name: name,
@@ -327,7 +327,7 @@ fn open_pixels(
 }
 
 /// Menu / control-channel entry point. `None` when the call isn't for this dialog.
-pub fn menu(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub fn menu(app: &mut PixelwrightApp, ctx: &egui::Context, id: &str, params: &Value) -> Option<Result<Value, String>> {
     if id != "filter.cameraRaw" {
         return None;
     }
@@ -381,7 +381,7 @@ pub fn menu(app: &mut PhotocraftApp, ctx: &egui::Context, id: &str, params: &Val
     result
 }
 
-fn menu_update(app: &mut PhotocraftApp, ctx: &egui::Context, ui: &Value) -> Option<Result<Value, String>> {
+fn menu_update(app: &mut PixelwrightApp, ctx: &egui::Context, ui: &Value) -> Option<Result<Value, String>> {
     // Stage both filter and presentation updates. No texture, preference or dialog mutation
     // occurs until every part of the request has passed validation.
     let d = app.camera_raw.as_ref()?;
@@ -455,7 +455,7 @@ fn menu_update(app: &mut PhotocraftApp, ctx: &egui::Context, ui: &Value) -> Opti
     Some(Ok(app.camera_raw.as_ref().map(|d| d.describe(&app.ui.camera_raw_scope, &app.ui.camera_raw_preview)).unwrap_or(Value::Null)))
 }
 
-fn commit(app: &mut PhotocraftApp) -> Result<Value, String> {
+fn commit(app: &mut PixelwrightApp) -> Result<Value, String> {
     let d = app.camera_raw.as_ref().ok_or(tl!("Camera Raw isn't open"))?;
     let result = match d.target {
         Target::NewFilter => {
@@ -526,7 +526,7 @@ fn wheel(ui: &mut egui::Ui, dirty: &mut bool, title: &str, w: &mut Wheel) {
 }
 
 // The shared Curve editor must never produce a curve `CameraRaw::validate` rejects.
-const _: () = assert!(crate::point_curve::MAX_POINTS == photocraft_algo::camera_raw::MAX_CURVE_POINTS && crate::point_curve::MIN_GAP >= 1.0);
+const _: () = assert!(crate::point_curve::MAX_POINTS == pixelwright_algo::camera_raw::MAX_CURVE_POINTS && crate::point_curve::MIN_GAP >= 1.0);
 
 /// Small point-curve editor (master channel): click to add, drag to move, right-click to delete.
 fn curve_editor(ui: &mut egui::Ui, p: &mut CameraRaw, dirty: &mut bool, state: &mut crate::state::PointCurveState) -> ERect {
@@ -561,7 +561,7 @@ fn curve_editor(ui: &mut egui::Ui, p: &mut CameraRaw, dirty: &mut bool, state: &
     rect
 }
 
-pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
+pub fn show(app: &mut PixelwrightApp, ctx: &egui::Context) {
     if app.camera_raw.is_none() {
         return;
     }
@@ -710,7 +710,7 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
                     _ => &mut p.hsl_lum,
                 };
                 for (k, name) in BANDS.iter().enumerate() {
-                    let c = photocraft_algo::camera_raw::HSL_BANDS[k];
+                    let c = pixelwright_algo::camera_raw::HSL_BANDS[k];
                     let base = hue_color(c);
                     let grad = [Color32::from_gray(128), base];
                     row(ui, &mut dirty, name, &mut arr[k], -100.0..=100.0, Some(&grad));
@@ -801,7 +801,7 @@ mod tests {
 
     #[test]
     fn histogram_follows_preview_and_view_changes_do_not_render_or_edit() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
         app.run("file.new", json!({"width": 64, "height": 48})).unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
@@ -828,7 +828,7 @@ mod tests {
 
     #[test]
     fn smart_filter_double_click_edits_the_stored_camera_raw_filter_in_its_own_dialog() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
         app.run("file.new", json!({"width": 64, "height": 48})).unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
@@ -839,8 +839,8 @@ mod tests {
         app.run("filter.cameraRaw", json!({"exposure": 1.0, "contrast": 20})).unwrap();
         app.run("layer.smartFilter.setParams", json!({"index": 0, "params": {"pointCurve": legacy}})).unwrap();
         let layer = app.session.active().unwrap().active_layer.unwrap();
-        let smart = |app: &PhotocraftApp| match &app.session.active().unwrap().doc.layer(layer).unwrap().content {
-            photocraft_doc::LayerContent::Smart(sm) => sm.clone(),
+        let smart = |app: &PixelwrightApp| match &app.session.active().unwrap().doc.layer(layer).unwrap().content {
+            pixelwright_doc::LayerContent::Smart(sm) => sm.clone(),
             _ => panic!("not a smart object"),
         };
         let steps = app.session.active().unwrap().history.past_len();
@@ -878,12 +878,12 @@ mod tests {
 
     #[test]
     fn distant_sparse_pixels_cannot_trigger_an_unbounded_proxy_scan() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
         app.run("file.new", json!({"width":64,"height":48})).unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
         let layer = app.session.active().unwrap().active_layer.unwrap();
-        let mut source = photocraft_raster::Surface::new(photocraft_color::PixelFormat::RGBA8);
+        let mut source = pixelwright_raster::Surface::new(pixelwright_color::PixelFormat::RGBA8);
         source.write_region(Rect::new(30_000, 30_000, 30_001, 30_001), &[0.5, 0.5, 0.5, 1.0]);
         let result = open_pixels(&mut app, &ctx, layer, source, CameraRaw::default(), Coverage::None, Target::NewFilter);
         assert!(result.unwrap_err().contains("bounds are too large"));
@@ -892,7 +892,7 @@ mod tests {
 
     #[test]
     fn dialog_drives_the_engine() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+        let mut app = PixelwrightApp::new(pixelwright_engine::Session::new(), Default::default());
         let ctx = egui::Context::default();
         app.run("file.new", json!({"width": 64, "height": 48})).unwrap();
         app.run("layer.new.layer", json!({})).unwrap();

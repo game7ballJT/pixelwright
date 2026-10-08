@@ -1,7 +1,7 @@
 //! Blurs: Gaussian, box, motion, radial, surface.
 
-use photocraft_geom::Rect;
-use photocraft_raster::Interrupt;
+use pixelwright_geom::Rect;
+use pixelwright_raster::Interrupt;
 
 use crate::image::{Edge, Image, premultiply, unpremultiply};
 use crate::photo_util::{par_map, par_rows};
@@ -276,7 +276,7 @@ fn strips(out: Rect) -> impl Iterator<Item = Rect> {
         .step_by(STRIP as usize)
         .map(move |x| Rect::new(x.max(out.x0), out.y0, x.saturating_add(STRIP).min(out.x1), out.y1))
 }
-const _: () = assert!(photocraft_geom::TILE_SIZE % STRIP == 0);
+const _: () = assert!(pixelwright_geom::TILE_SIZE % STRIP == 0);
 
 /// [`box_blur`] of an image (edges repeated) into one interleaved buffer for `out`.
 fn box_passes(src: &Image, out: Rect, alpha: bool, boxes: &[usize]) -> Vec<f32> {
@@ -520,8 +520,8 @@ fn surface_direct(src: &Image, out: Rect, ctx: &Ctx, r: i32, t: f32) -> Vec<f32>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use photocraft_color::{ColorMode, PixelFormat, SampleType};
-    use photocraft_raster::Surface;
+    use pixelwright_color::{ColorMode, PixelFormat, SampleType};
+    use pixelwright_raster::Surface;
 
     #[test]
     fn box_gaussian_matches_exact_kernel() {

@@ -1,8 +1,9 @@
 # Release playbook
 
-The release playbook shared by every crafting app lives in craftrules:
-[`../craftrules/release/playbook.md`](../../craftrules/release/playbook.md)
-(`storytold/craftrules`). It is the canonical copy; don't duplicate it here.
+The upstream project (PhotoCraft) keeps a shared release playbook in its public `craftrules`
+repository ([`storytold/craftrules`](https://github.com/storytold/craftrules), `release/playbook.md`).
+Pixelwright follows its shape, simplified for a fork with no signing secrets; the live recipe is
+the workflow below.
 
-PhotoCraft is its reference implementation (`.github/workflows/release.yml`, `packaging/`,
-`cargo xtask version`). PhotoCraft-specific details are in [releasing.md](releasing.md).
+Pixelwright's release flow lives in `.github/workflows/release.yml`, `packaging/` and
+`cargo xtask version`. Pixelwright-specific details are in [releasing.md](releasing.md).

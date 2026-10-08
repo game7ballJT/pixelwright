@@ -1,5 +1,5 @@
 [package]
-name = "photocraft-tablet"
+name = "pixelwright-tablet"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -12,7 +12,7 @@
 
 use egui::{CursorIcon, Modifiers};
 
-use crate::PhotocraftApp;
+use crate::PixelwrightApp;
 use crate::canvas::ToolEvent;
 use crate::state::Tool;
 
@@ -96,7 +96,7 @@ fn size_ok(r: [f64; 4]) -> bool {
 }
 
 /// The options-bar ratio preset as width / height.
-fn preset_ratio(app: &PhotocraftApp) -> Option<f64> {
+fn preset_ratio(app: &PixelwrightApp) -> Option<f64> {
     let size = app.session.active().map_or((1.0, 1.0), |s| (s.doc.size.width as f64, s.doc.size.height as f64));
     crate::chrome_ui::crop_ratio(&app.ui.tool_options.crop_ratio, size.0, size.1).map(|(w, h)| w / h).filter(|k| k.is_finite() && *k > 0.0)
 }
@@ -150,13 +150,13 @@ pub fn resized(r: [f64; 4], hx: i8, hy: i8, d: [f64; 2], ratio: Option<f64>, alt
 }
 
 /// Space is held (set by the canvas each frame, or by `ui.pointer`'s `space` flag).
-pub fn set_space(app: &mut PhotocraftApp, down: bool) {
+pub fn set_space(app: &mut PixelwrightApp, down: bool) {
     app.crop.space = down;
 }
 
 /// As in Photoshop, the Crop tool always shows a frame: on picking the tool, and after a crop is
 /// cancelled or committed, it frames the selection's bounds, or the whole canvas.
-pub fn ensure_frame(app: &mut PhotocraftApp) {
+pub fn ensure_frame(app: &mut PixelwrightApp) {
     if app.ui.tool != Tool::Crop {
         // Leaving the tool drops an untouched default frame (a drawn one stays pending).
         if app.crop.default_frame {
@@ -186,16 +186,16 @@ pub fn ensure_frame(app: &mut PhotocraftApp) {
 }
 
 /// A crop gesture is in progress: Space repositions the frame rather than panning.
-pub fn active(app: &PhotocraftApp) -> bool {
+pub fn active(app: &PixelwrightApp) -> bool {
     app.ui.tool == Tool::Crop && app.crop.drag.is_some()
 }
 
-fn tolerance(app: &PhotocraftApp) -> f64 {
+fn tolerance(app: &PixelwrightApp) -> f64 {
     HANDLE_PX / (app.current_zoom() as f64).max(0.01)
 }
 
 /// Pointer input for the Crop tool. Returns true when the event was its.
-pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: Modifiers) -> bool {
+pub fn pointer(app: &mut PixelwrightApp, ev: ToolEvent, mods: Modifiers) -> bool {
     if app.ui.tool != Tool::Crop {
         app.crop.drag = None;
         return false;
@@ -234,7 +234,7 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: Modifiers) -> bool 
 }
 
 /// The frame follows the pointer at `p`.
-fn update(app: &mut PhotocraftApp, p: [f64; 2], mods: Modifiers) {
+fn update(app: &mut PixelwrightApp, p: [f64; 2], mods: Modifiers) {
     let ratio = preset_ratio(app);
     let space = app.crop.space;
     let Some(drag) = app.crop.drag.as_mut() else { return };
@@ -271,7 +271,7 @@ fn update(app: &mut PhotocraftApp, p: [f64; 2], mods: Modifiers) {
 }
 
 /// Cursor over the canvas at document point `p`: resize arrows on the edges, move inside.
-pub fn cursor(app: &PhotocraftApp, p: [f64; 2]) -> Option<CursorIcon> {
+pub fn cursor(app: &PixelwrightApp, p: [f64; 2]) -> Option<CursorIcon> {
     if app.ui.tool != Tool::Crop {
         return None;
     }
@@ -295,24 +295,24 @@ pub fn cursor(app: &PhotocraftApp, p: [f64; 2]) -> Option<CursorIcon> {
 mod tests {
     use super::*;
     use crate::canvas::tool_event;
-    use photocraft_doc::{Color, ColorMode, Document, SampleType, Size};
+    use pixelwright_doc::{Color, ColorMode, Document, SampleType, Size};
     use serde_json::json;
 
     const NONE: Modifiers = Modifiers::NONE;
     const SHIFT: Modifiers = Modifiers::SHIFT;
 
-    fn app(depth: SampleType) -> PhotocraftApp {
+    fn app(depth: SampleType) -> PixelwrightApp {
         let doc = Document::with_background("crop", Size::new(200, 100), ColorMode::Rgb, depth, Color::WHITE);
-        let mut s = photocraft_engine::Session::new();
+        let mut s = pixelwright_engine::Session::new();
         s.add_document(doc, None);
-        let mut app = PhotocraftApp::new(s, crate::Services::default());
+        let mut app = PixelwrightApp::new(s, crate::Services::default());
         app.ui.tool = Tool::Crop;
         app.ui.extras.snap = false;
         app.ui.view.show.smart_guides = false;
         app
     }
 
-    fn drag(app: &mut PhotocraftApp, pts: &[[f64; 2]], mods: Modifiers) {
+    fn drag(app: &mut PixelwrightApp, pts: &[[f64; 2]], mods: Modifiers) {
         let (first, last) = (pts[0], pts[pts.len() - 1]);
         tool_event(app, ToolEvent::Down { x: first[0], y: first[1], pressure: 1.0 }, mods);
         for p in &pts[1..] {
@@ -450,7 +450,7 @@ mod tests {
         let view = crate::state::View { zoom: 2.0, center: [100.0, 50.0], fit_pending: false, doc_size: [200, 100] };
         a.ui.views = vec![view.clone()];
         let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(600.0, 400.0)).build_ui_state(
-            |ui, app: &mut PhotocraftApp| {
+            |ui, app: &mut PixelwrightApp| {
                 let v = app.ui.views[0].clone();
                 crate::canvas::canvas_view(app, ui, 0, ui.max_rect(), v, true);
             },
@@ -524,7 +524,7 @@ mod tests {
         drag(&mut app, &[[10.0, 10.0], [30.0, 30.0]], SHIFT);
         crate::canvas::commit_crop(&mut app);
         // No document: events are swallowed quietly.
-        let mut empty = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut empty = PixelwrightApp::new(pixelwright_engine::Session::new(), crate::Services::default());
         empty.ui.tool = Tool::Crop;
         drag(&mut empty, &[[1.0, 1.0], [9.0, 9.0]], NONE);
         assert!(empty.ui.crop_rect.is_none());

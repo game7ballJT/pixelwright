@@ -1,5 +1,5 @@
 [package]
-name = "photocraft-paint"
+name = "pixelwright-paint"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,9 +8,9 @@ license.workspace = true
 workspace = true
 
 [dependencies]
-photocraft-geom = { workspace = true }
-photocraft-color = { workspace = true }
-photocraft-raster = { workspace = true }
+pixelwright-geom = { workspace = true }
+pixelwright-color = { workspace = true }
+pixelwright-raster = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]
