@@ -184,6 +184,16 @@ apps/  pixelwright  pixelwright-cli  pixelwright-web
 
 Layering is enforced by `cargo xtask layers`; the engine never sees the UI toolkit. New contributors and AI agents: read [`AGENTS.md`](AGENTS.md), then [`docs/`](docs/). The long-form documentation is in [`book/`](book/).
 
+## The family
+
+Pixelwright is one of a growing family of forks of the ArtCraft Team's creative apps. Each has its own repository and a live preview in the browser:
+
+| | App | What it is for | Forked from | Code | Live preview |
+|:-:|---|---|---|---|---|
+| <img src="https://raw.githubusercontent.com/game7ballJT/pixelwright/main/assets/app-icon/hicolor/64x64/apps/online.jonmcgee.pixelwright.png" alt="" width="32" height="32"> | **Pixelwright** (you are here) | Image editing: layers, masks, type and real PSD files | [PhotoCraft](https://github.com/storytold/photocraft) | [GitHub](https://github.com/game7ballJT/pixelwright) | [Try it](https://www.jonmcgee.online/apps/pixelwright/) |
+| <img src="https://raw.githubusercontent.com/game7ballJT/splinewright/main/assets/app-icon/hicolor/64x64/apps/online.jonmcgee.splinewright.png" alt="" width="32" height="32"> | **Splinewright** | Vector illustration: paths, Pathfinder, live effects, SVG and PDF | [VectorCraft](https://github.com/storytold/vectorcraft) | [GitHub](https://github.com/game7ballJT/splinewright) | [Try it](https://www.jonmcgee.online/apps/splinewright/) |
+| <img src="https://raw.githubusercontent.com/game7ballJT/reelwright/main/assets/app-icon/hicolor/64x64/apps/online.jonmcgee.reelwright.png" alt="" width="32" height="32"> | **Reelwright** | Video editing, color and sound | [FilmCraft](https://github.com/storytold/filmcraft) | [GitHub](https://github.com/game7ballJT/reelwright) | [Try it](https://www.jonmcgee.online/apps/reelwright/) |
+
 ## Credits and license
 
 Pixelwright is a modified fork of **[PhotoCraft](https://github.com/storytold/photocraft) v0.5.0**, copyright (c) 2026 the ArtCraft Team and the PhotoCraft contributors, whose work this repository builds on and whose history it preserves. All of it, and the changes made here, are available under the same terms: [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option. This fork is independent and is not affiliated with or endorsed by the upstream authors; it carries none of their branding, as their brand license requires of forks. Required notices are in [NOTICE](NOTICE).
