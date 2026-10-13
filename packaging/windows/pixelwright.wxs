@@ -11,13 +11,13 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Package
       Name="Pixelwright"
-      Manufacturer="Learning Machines LLC"
+      Manufacturer="Jon McGee"
       Version="$(var.Version)"
       UpgradeCode="D9660F32-2D0A-4ABE-B73D-17BE25F1542C"
       Scope="perMachine"
       Compressed="yes"
       Language="1033">
-    <SummaryInformation Description="Pixelwright image editor" Manufacturer="Learning Machines LLC" />
+    <SummaryInformation Description="Pixelwright image editor" Manufacturer="Jon McGee" />
     <!-- Same-version upgrades let successive pre-releases of one X.Y.Z replace each other
          (MSI versions are numeric, so 1.2.3-rc.1 and 1.2.3-rc.2 are both 1.2.3). -->
     <MajorUpgrade AllowSameVersionUpgrades="yes"

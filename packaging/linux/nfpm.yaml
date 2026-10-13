@@ -13,7 +13,7 @@ release: 1
 section: graphics
 priority: optional
 maintainer: ${PIXELWRIGHT_MAINTAINER}
-vendor: Learning Machines LLC
+vendor: Jon McGee
 homepage: https://www.jonmcgee.online/apps/pixelwright/
 license: MIT OR Apache-2.0
 description: |-

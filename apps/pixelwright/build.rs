@@ -15,7 +15,7 @@ fn main() {
     res.set_icon("../../assets/app-icon/pixelwright.ico")
         .set("ProductName", "Pixelwright")
         .set("FileDescription", "Pixelwright image editor")
-        .set("CompanyName", "Learning Machines LLC")
+        .set("CompanyName", "Jon McGee")
         .set("LegalCopyright", "Copyright (c) the Pixelwright authors. MIT OR Apache-2.0.")
         .set("OriginalFilename", "pixelwright.exe")
         .set("InternalName", "pixelwright");
