@@ -44,6 +44,10 @@ Three programs come out of this repository:
 The live preview is the real program compiled to WebAssembly, running entirely in your browser tab:
 **<https://www.jonmcgee.online/apps/pixelwright/>**. It needs WebGPU or WebGL2, downloads about 9 MB (22 MB unpacked) once, and starts with a few public-domain images you can open from the start screen (or drop in your own files, including PSDs; nothing is uploaded anywhere).
 
+## Download for Windows
+
+**Windows (64-bit):** [download Pixelwright-windows-x64.zip](https://github.com/game7ballJT/pixelwright/releases/latest/download/Pixelwright-windows-x64.zip) (or the [latest release](https://github.com/game7ballJT/pixelwright/releases/latest) page), unzip it and run `Pixelwright.exe`. There is no installer. The file is not code-signed, so Windows SmartScreen will say it protected your PC: choose *More info*, then *Run anyway*, or build it yourself from source. SHA-256 checksums are on the release. It needs a graphics card with DirectX 12 or Vulkan; without one, use the browser build at <https://www.jonmcgee.online/apps/pixelwright/>.
+
 ## What you get
 
 <table>
